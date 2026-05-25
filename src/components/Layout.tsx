@@ -8,7 +8,7 @@ const nav = [
   { to: "/goals", label: "Goals" },
 ];
 
-export function Layout() {
+export function Layout({ children }: { children?: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return (
     <div className="min-h-screen">
@@ -38,7 +38,7 @@ export function Layout() {
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <Outlet />
+        {children ?? <Outlet />}
       </main>
     </div>
   );
