@@ -1,7 +1,7 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 
 const nav = [
-  { to: "/", label: "Overview" },
+  { to: "/", label: "Live Plan" },
   { to: "/transactions", label: "Transactions" },
   { to: "/import", label: "Import CSV" },
   { to: "/fixed", label: "Fixed Expenses" },
