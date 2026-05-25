@@ -1,161 +1,288 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Info } from "lucide-react";
 import { Layout } from "@/components/Layout";
-import { supabase, type Transaction, type Goal, type FixedExpense } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { formatINR, formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   component: () => (
     <Layout>
-      <Overview />
+      <LivePlan />
     </Layout>
   ),
 });
 
-function Overview() {
-  const { data: txs } = useQuery({
-    queryKey: ["transactions"],
+type Driver = {
+  label: string;
+  amount?: number | string | null;
+  date?: string | null;
+  note?: string | null;
+};
+
+type PlanGoal = {
+  id?: string;
+  name: string;
+  current_amount?: number | string | null;
+  target_amount?: number | string | null;
+  status?: "on-track" | "at-risk" | "behind" | string;
+  drivers?: Driver[];
+};
+
+type PlanResponse = {
+  headroom?: number;
+  expected_income?: number;
+  fixed_outflows?: number;
+  goal_savings_required?: number;
+  month?: string;
+  drivers?: {
+    headroom?: Driver[];
+    expected_income?: Driver[];
+    fixed_outflows?: Driver[];
+    goal_savings_required?: Driver[];
+  };
+  goals?: PlanGoal[];
+};
+
+function LivePlan() {
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
+    queryKey: ["compute-plan"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .order("occurred_at", { ascending: false });
+      const { data, error } = await supabase.functions.invoke("compute-plan", {
+        body: { month: new Date().toISOString().slice(0, 7) },
+      });
       if (error) throw error;
-      return data as Transaction[];
-    },
-  });
-  const { data: goals } = useQuery({
-    queryKey: ["goals"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("goals").select("*").order("priority");
-      if (error) throw error;
-      return data as Goal[];
-    },
-  });
-  const { data: fixed } = useQuery({
-    queryKey: ["fixed_expenses"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("fixed_expenses").select("*").eq("active", true);
-      if (error) throw error;
-      return data as FixedExpense[];
+      return data as PlanResponse;
     },
   });
 
   const now = new Date();
-  const monthTxs = (txs ?? []).filter((t) => {
-    const d = new Date(t.occurred_at);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-  const credit = monthTxs.filter((t) => t.direction === "credit").reduce((s, t) => s + Number(t.amount), 0);
-  const debit = monthTxs.filter((t) => t.direction === "debit").reduce((s, t) => s + Number(t.amount), 0);
-  const fixedTotal = (fixed ?? []).reduce((s, f) => s + Number(f.amount), 0);
+  const monthLabel = now.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Overview</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {now.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Live Plan</h1>
+          <p className="text-sm text-muted-foreground mt-1">{data?.month ?? monthLabel}</p>
+        </div>
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+        >
+          {isFetching ? "Refreshing…" : "Refresh"}
+        </button>
+      </div>
+
+      {isLoading && <p className="text-sm text-muted-foreground">Computing your plan…</p>}
+      {error && (
+        <div className="rounded-lg border border-border bg-card p-5 text-sm">
+          <p className="font-medium">Couldn't reach compute-plan.</p>
+          <p className="text-muted-foreground mt-1">{(error as Error).message}</p>
+        </div>
+      )}
+
+      {data && (
+        <>
+          <HeadroomHero
+            amount={data.headroom ?? 0}
+            drivers={data.drivers?.headroom}
+          />
+
+          <section className="rounded-lg border border-border bg-card divide-y divide-border">
+            <BreakdownRow
+              label="Expected income"
+              amount={data.expected_income ?? 0}
+              tone="credit"
+              drivers={data.drivers?.expected_income}
+            />
+            <BreakdownRow
+              label="Fixed outflows"
+              amount={data.fixed_outflows ?? 0}
+              tone="debit"
+              drivers={data.drivers?.fixed_outflows}
+            />
+            <BreakdownRow
+              label="Goal savings required"
+              amount={data.goal_savings_required ?? 0}
+              tone="debit"
+              drivers={data.drivers?.goal_savings_required}
+            />
+            <BreakdownRow
+              label="Headroom"
+              amount={data.headroom ?? 0}
+              tone="muted"
+              drivers={data.drivers?.headroom}
+            />
+          </section>
+
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold">Goals</h2>
+            {(data.goals ?? []).length === 0 && (
+              <p className="text-sm text-muted-foreground">No goals yet.</p>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {(data.goals ?? []).map((g, i) => (
+                <GoalCard key={g.id ?? i} goal={g} />
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function HeadroomHero({ amount, drivers }: { amount: number; drivers?: Driver[] }) {
+  const [open, setOpen] = useState(false);
+  const negative = amount < 0;
+  return (
+    <section className="rounded-lg border border-border bg-card p-8">
+      <div className="flex items-center gap-2">
+        <p className="text-xs uppercase tracking-wider text-muted-foreground">
+          Discretionary headroom this month
         </p>
+        <InfoBtn open={open} onClick={() => setOpen((v) => !v)} />
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Stat label="Income this month" value={formatINR(credit)} tone="credit" />
-        <Stat label="Spent this month" value={formatINR(debit)} tone="debit" />
-        <Stat label="Net" value={formatINR(credit - debit)} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card title="Fixed monthly commitments" subtitle={`${fixed?.length ?? 0} items · ${formatINR(fixedTotal)} / month`}>
-          <ul className="divide-y divide-border">
-            {(fixed ?? []).map((f) => (
-              <li key={f.id} className="py-2 flex items-center justify-between text-sm">
-                <span>
-                  {f.name}
-                  {f.day_of_month ? <span className="text-muted-foreground"> · day {f.day_of_month}</span> : null}
-                </span>
-                <span className="tabular-nums">{formatINR(f.amount)}</span>
-              </li>
-            ))}
-            {(!fixed || fixed.length === 0) && <p className="text-sm text-muted-foreground py-2">None yet.</p>}
-          </ul>
-        </Card>
-
-        <Card title="Goals" subtitle={`${goals?.length ?? 0} active`}>
-          <ul className="space-y-3">
-            {(goals ?? []).map((g) => {
-              const pct = Math.min(100, (Number(g.current_amount ?? 0) / Number(g.target_amount)) * 100);
-              return (
-                <li key={g.id}>
-                  <div className="flex justify-between text-sm">
-                    <span>{g.name}</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {formatINR(g.current_amount)} / {formatINR(g.target_amount)}
-                    </span>
-                  </div>
-                  <div className="mt-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full bg-foreground/70" style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">by {formatDate(g.target_date)}</p>
-                </li>
-              );
-            })}
-            {(!goals || goals.length === 0) && <p className="text-sm text-muted-foreground">None yet.</p>}
-          </ul>
-        </Card>
-      </div>
-
-      <Card title="Recent transactions">
-        <ul className="divide-y divide-border">
-          {(txs ?? []).slice(0, 8).map((t) => (
-            <li key={t.id} className="py-2.5 flex items-center justify-between text-sm">
-              <div>
-                <p>{t.description || t.category || "—"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDate(t.occurred_at)}
-                  {t.category ? ` · ${t.category}` : ""}
-                </p>
-              </div>
-              <span
-                className="tabular-nums"
-                style={{ color: t.direction === "credit" ? "var(--credit)" : "var(--debit)" }}
-              >
-                {t.direction === "credit" ? "+" : "−"}
-                {formatINR(t.amount)}
-              </span>
-            </li>
-          ))}
-          {(!txs || txs.length === 0) && (
-            <p className="text-sm text-muted-foreground py-2">No transactions yet.</p>
-          )}
-        </ul>
-      </Card>
-    </div>
-  );
-}
-
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "credit" | "debit" }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-5">
-      <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
       <p
-        className="text-2xl font-semibold mt-2 tabular-nums"
-        style={tone ? { color: tone === "credit" ? "var(--credit)" : "var(--debit)" } : undefined}
+        className="mt-3 text-5xl font-semibold tabular-nums"
+        style={{ color: negative ? "var(--debit)" : "var(--credit)" }}
       >
-        {value}
+        {formatINR(amount)}
       </p>
-    </div>
-  );
-}
-
-function Card({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-lg border border-border bg-card p-5">
-      <header className="mb-3">
-        <h2 className="text-sm font-semibold">{title}</h2>
-        {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
-      </header>
-      {children}
+      <p className="text-sm text-muted-foreground mt-2">
+        What's left after income, fixed costs, and goal savings.
+      </p>
+      {open && <DriversPanel drivers={drivers} />}
     </section>
   );
+}
+
+function BreakdownRow({
+  label,
+  amount,
+  tone,
+  drivers,
+}: {
+  label: string;
+  amount: number;
+  tone: "credit" | "debit" | "muted";
+  drivers?: Driver[];
+}) {
+  const [open, setOpen] = useState(false);
+  const color =
+    tone === "credit" ? "var(--credit)" : tone === "debit" ? "var(--debit)" : undefined;
+  return (
+    <div className="px-5 py-3.5">
+      <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-2">
+          <span>{label}</span>
+          <InfoBtn open={open} onClick={() => setOpen((v) => !v)} />
+        </div>
+        <span className="tabular-nums font-medium" style={color ? { color } : undefined}>
+          {formatINR(amount)}
+        </span>
+      </div>
+      {open && <DriversPanel drivers={drivers} />}
+    </div>
+  );
+}
+
+function GoalCard({ goal }: { goal: PlanGoal }) {
+  const [open, setOpen] = useState(false);
+  const current = Number(goal.current_amount ?? 0);
+  const target = Number(goal.target_amount ?? 0);
+  const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+  const status = (goal.status ?? "on-track") as string;
+  const styles = statusStyles(status);
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-medium truncate">{goal.name}</p>
+            <InfoBtn open={open} onClick={() => setOpen((v) => !v)} />
+          </div>
+          <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+            {formatINR(current)} / {formatINR(target)}
+          </p>
+        </div>
+        <span
+          className="text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap"
+          style={{ backgroundColor: styles.bg, color: styles.fg }}
+        >
+          {statusLabel(status)}
+        </span>
+      </div>
+      <div className="mt-3 h-1.5 bg-secondary rounded-full overflow-hidden">
+        <div className="h-full" style={{ width: `${pct}%`, backgroundColor: styles.fg }} />
+      </div>
+      {open && <DriversPanel drivers={goal.drivers} />}
+    </div>
+  );
+}
+
+function InfoBtn({ open, onClick }: { open: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Show details"
+      aria-expanded={open}
+      className={`inline-flex items-center justify-center h-5 w-5 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors ${
+        open ? "bg-secondary text-foreground" : ""
+      }`}
+    >
+      <Info size={13} />
+    </button>
+  );
+}
+
+function DriversPanel({ drivers }: { drivers?: Driver[] }) {
+  if (!drivers || drivers.length === 0) {
+    return (
+      <div className="mt-3 rounded-md bg-secondary/50 px-3 py-2 text-xs text-muted-foreground">
+        No driver details provided by compute-plan.
+      </div>
+    );
+  }
+  return (
+    <ul className="mt-3 rounded-md bg-secondary/50 divide-y divide-border">
+      {drivers.map((d, i) => (
+        <li key={i} className="px-3 py-2 flex items-start justify-between gap-3 text-xs">
+          <div className="min-w-0">
+            <p className="truncate">{d.label}</p>
+            {(d.date || d.note) && (
+              <p className="text-muted-foreground mt-0.5">
+                {d.date ? formatDate(d.date) : ""}
+                {d.date && d.note ? " · " : ""}
+                {d.note ?? ""}
+              </p>
+            )}
+          </div>
+          {d.amount != null && (
+            <span className="tabular-nums text-muted-foreground whitespace-nowrap">
+              {formatINR(d.amount)}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function statusLabel(s: string) {
+  if (s === "at-risk") return "At risk";
+  if (s === "behind") return "Behind";
+  return "On track";
+}
+
+function statusStyles(s: string): { bg: string; fg: string } {
+  // Muted, not neon
+  if (s === "behind") return { bg: "oklch(0.92 0.04 25)", fg: "oklch(0.45 0.12 25)" };
+  if (s === "at-risk") return { bg: "oklch(0.94 0.05 80)", fg: "oklch(0.5 0.11 75)" };
+  return { bg: "oklch(0.93 0.05 150)", fg: "oklch(0.42 0.09 150)" };
 }
