@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import Papa from "papaparse";
+import { parseFile } from "@/lib/parse-statement";
 import { useMemo, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
