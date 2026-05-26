@@ -139,7 +139,8 @@ async function parsePDF(file: File): Promise<ParsedSheet> {
     const amount = amts.length >= 2 ? amts[amts.length - 2] : amts[amts.length - 1];
 
     // Description = text between date and first amount
-    const firstAmtIdx = rest.indexOf(amts[0]);
+    const firstAmt = amts[0] ?? "";
+    const firstAmtIdx = firstAmt ? rest.indexOf(firstAmt) : -1;
     const description = (firstAmtIdx > 0 ? rest.slice(0, firstAmtIdx) : rest).trim();
 
     // Try to detect Dr/Cr markers
