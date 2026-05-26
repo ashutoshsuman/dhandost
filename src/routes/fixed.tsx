@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { supabase, type FixedExpense } from "@/lib/supabase";
 import { formatINR } from "@/lib/format";
-import { Button, Field, Input } from "@/components/ui-primitives";
+import { Button, Field, Input, Select } from "@/components/ui-primitives";
+import { DEFAULT_CATEGORIES } from "@/lib/categories";
 
 export const Route = createFileRoute("/fixed")({
   component: () => (
@@ -121,7 +122,12 @@ function AddForm({ onClose }: { onClose: () => void }) {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <Field label="Name"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></Field>
         <Field label="Amount (₹)"><Input type="number" step="0.01" min="0" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required /></Field>
-        <Field label="Category"><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Rent, EMI, SIP…" /></Field>
+        <Field label="Category">
+          <Select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+            <option value="">—</option>
+            {DEFAULT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </Select>
+        </Field>
         <Field label="Day of month"><Input type="number" min="1" max="31" value={form.day_of_month} onChange={(e) => setForm({ ...form, day_of_month: e.target.value })} /></Field>
       </div>
       {add.isError && <p className="text-sm text-destructive">{(add.error as Error).message}</p>}
