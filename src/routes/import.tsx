@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import Papa from "papaparse";
+import { parseFile } from "@/lib/parse-statement";
 import { useMemo, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
@@ -70,26 +70,27 @@ function ImportPage() {
   const [defaultCategory, setDefaultCategory] = useState("");
   const [fileName, setFileName] = useState("");
 
-  const onFile = (file: File) => {
+  const onFile = async (file: File) => {
     setFileName(file.name);
-    Papa.parse<Record<string, string>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (res) => {
-        const hs = res.meta.fields ?? [];
-        setHeaders(hs);
-        setRows(res.data);
-        const hasDebitCredit = guessCol(hs, [/debit|withdraw/i]) && guessCol(hs, [/credit|deposit/i]);
-        setMapping({
-          date: guessCol(hs, [/date|txn.?date|value.?date/i]),
-          description: guessCol(hs, [/desc|narration|particulars|details/i]),
-          amount: guessCol(hs, [/^amount$|amt/i]),
-          debit: guessCol(hs, [/debit|withdraw/i]),
-          credit: guessCol(hs, [/credit|deposit/i]),
-          mode: hasDebitCredit ? "split" : "single",
-        });
-      },
-    });
+    setHeaders([]);
+    setRows([]);
+    try {
+      const { headers: hs, rows: rs } = await parseFile(file);
+      setHeaders(hs);
+      setRows(rs);
+      const hasDebitCredit = guessCol(hs, [/debit|withdraw/i]) && guessCol(hs, [/credit|deposit/i]);
+      setMapping({
+        date: guessCol(hs, [/date|txn.?date|value.?date/i]),
+        description: guessCol(hs, [/desc|narration|particulars|details|remarks/i]),
+        amount: guessCol(hs, [/^amount$|amt/i]),
+        debit: guessCol(hs, [/debit|withdraw/i]),
+        credit: guessCol(hs, [/credit|deposit/i]),
+        mode: hasDebitCredit ? "split" : "single",
+      });
+    } catch (e) {
+      console.error("Failed to parse file", e);
+      alert("Could not parse this file. Try CSV or XLSX, or a text-based PDF.");
+    }
   };
 
   const preview = useMemo(() => {
@@ -145,15 +146,15 @@ function ImportPage() {
       <div>
         <h1 className="text-2xl font-semibold">Import CSV</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload a bank statement. Map the columns, preview, then confirm.
+          Upload a bank statement (CSV, XLS/XLSX, or text-based PDF). Map the columns, preview, then confirm.
         </p>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-5">
-        <Field label="CSV file">
+        <Field label="Statement file">
           <input
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xls,.xlsx,.xlsm,.pdf,text/csv,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
             className="text-sm"
           />
