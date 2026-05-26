@@ -156,7 +156,7 @@ function ImportPage() {
             type="file"
             accept=".csv,.xls,.xlsx,.xlsm,.pdf,text/csv,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
-            className="text-sm"
+            className="text-sm cursor-pointer w-full"
           />
         </Field>
         {fileName && <p className="text-xs text-muted-foreground mt-2">{fileName} · {rows.length} rows</p>}
