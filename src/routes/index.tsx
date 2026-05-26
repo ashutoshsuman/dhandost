@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Loader2, Info, RefreshCw, ChevronDown } from "lucide-react";
 import { Layout } from "@/components/Layout";
-import { formatINR } from "@/lib/format";
+import { formatINR, formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -31,100 +32,196 @@ type PlanResponse = {
   discretionary_headroom: number;
   total_debt_balance: number;
   weighted_avg_interest_rate: number;
+  debt_count?: number;
   goals: PlanGoal[];
   computed_at: string;
 };
 
+const PLAN_URL =
+  "https://ibjsdafxjggjyamkdjeh.supabase.co/functions/v1/hyper-action";
+const ANON =
+  "Bearer sb_publishable_ztTyEdZPNNfk5PjttJimDg_-g3fmC0D";
+
 function LivePlan() {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ["hyper-action"],
+    queryKey: ["compute-plan"],
     queryFn: async () => {
-      const res = await fetch(
-        "https://ibjsdafxjggjyamkdjeh.supabase.co/functions/v1/hyper-action",
-        {
-          headers: {
-            Authorization:
-              "Bearer sb_publishable_ztTyEdZPNNfk5PjttJimDg_-g3fmC0D",
-          },
-        }
-      );
+      const res = await fetch(PLAN_URL, {
+        headers: { Authorization: ANON },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return (await res.json()) as PlanResponse;
     },
   });
 
-  const now = new Date();
-  const monthLabel = now.toLocaleDateString("en-IN", {
-    month: "long",
-    year: "numeric",
-  });
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <p className="mt-4 text-sm text-muted-foreground">
+          Computing your plan…
+        </p>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
+        <p className="text-base font-medium">Couldn't load plan</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Something went wrong while computing your plan.
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="mt-4 inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-secondary"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const headroom = data.discretionary_headroom;
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Live Plan</h1>
-          <p className="text-sm text-muted-foreground mt-1">{monthLabel}</p>
-        </div>
+    <div className="max-w-2xl mx-auto space-y-10 pb-8">
+      {/* Hero */}
+      <Expandable
+        summary={
+          <section className="text-center pt-4">
+            <p className="text-5xl md:text-6xl font-semibold tabular-nums tracking-tight">
+              {formatINR(headroom)}
+            </p>
+            <p className="mt-3 text-sm text-foreground">
+              available to spend freely this month
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              after fixed expenses and goal savings
+            </p>
+          </section>
+        }
+        detail={
+          <p>
+            Discretionary headroom = Expected income −
+            Fixed outflows − Goal savings required.
+            <br />
+            <span className="text-muted-foreground">
+              {formatINR(data.expected_monthly_income)} −{" "}
+              {formatINR(data.total_fixed_outflows)} −{" "}
+              {formatINR(data.total_goal_savings_required)} ={" "}
+              {formatINR(headroom)}
+            </span>
+          </p>
+        }
+      />
+
+      {/* Breakdown */}
+      <section className="rounded-xl border border-border bg-card divide-y divide-border">
+        <BreakdownRow
+          label="Expected monthly income"
+          amount={data.expected_monthly_income}
+          prefix=""
+          detail="Sum of recurring credits and configured monthly income sources."
+        />
+        <BreakdownRow
+          label="Fixed outflows"
+          amount={data.total_fixed_outflows}
+          prefix="−"
+          detail="Total of your active fixed expenses (rent, EMIs, subscriptions, utilities)."
+        />
+        <BreakdownRow
+          label="Goal savings required"
+          amount={data.total_goal_savings_required}
+          prefix="−"
+          detail="Monthly savings needed across all active goals to stay on track."
+        />
+        <BreakdownRow
+          label="Discretionary headroom"
+          amount={headroom}
+          prefix="="
+          highlight
+          detail="What remains after income minus fixed outflows and goal savings."
+        />
+      </section>
+
+      {/* Debt */}
+      {data.total_debt_balance > 0 && (
+        <p className="text-xs text-muted-foreground text-center">
+          {formatINR(data.total_debt_balance)} across{" "}
+          {data.debt_count ?? "your"} debts at avg{" "}
+          {data.weighted_avg_interest_rate?.toFixed(1)}% interest.
+        </p>
+      )}
+
+      {/* Goals */}
+      {data.goals && data.goals.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Goals
+          </h2>
+          <div className="space-y-3">
+            {data.goals.map((g) => (
+              <GoalCard key={g.id} goal={g} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Footer */}
+      <footer className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border">
+        <span>
+          Last computed:{" "}
+          {data.computed_at
+            ? new Date(data.computed_at).toLocaleString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "—"}
+        </span>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 hover:text-foreground disabled:opacity-50"
         >
-          {isFetching ? "Refreshing…" : "Refresh"}
+          <RefreshCw
+            className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`}
+          />
+          Refresh
         </button>
-      </div>
+      </footer>
+    </div>
+  );
+}
 
-      {isLoading && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Loading your plan…</span>
+function Expandable({
+  summary,
+  detail,
+}: {
+  summary: React.ReactNode;
+  detail: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full text-left group"
+      >
+        <div className="relative">
+          {summary}
+          <span className="absolute top-0 right-0 text-muted-foreground opacity-60 group-hover:opacity-100">
+            <Info className="h-3.5 w-3.5" />
+          </span>
         </div>
-      )}
-
-      {error && (
-        <div className="rounded-lg border border-border bg-card p-5 text-sm">
-          <p className="font-medium">Could not load your plan. Please try again.</p>
+      </button>
+      {open && (
+        <div className="mt-4 rounded-lg bg-secondary/60 px-4 py-3 text-xs text-foreground/80 leading-relaxed">
+          {detail}
         </div>
-      )}
-
-      {data && (
-        <>
-          <section className="rounded-lg border border-border bg-card divide-y divide-border">
-            <BreakdownRow
-              label="Monthly Income"
-              amount={data.expected_monthly_income}
-              tone="credit"
-            />
-            <BreakdownRow
-              label="Fixed Expenses"
-              amount={data.total_fixed_outflows}
-              tone="debit"
-            />
-            <BreakdownRow
-              label="Goal Savings Required"
-              amount={data.total_goal_savings_required}
-              tone="debit"
-            />
-            <BreakdownRow
-              label="Discretionary Headroom"
-              amount={data.discretionary_headroom}
-              tone="muted"
-            />
-          </section>
-
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold">Goals</h2>
-            {(data.goals ?? []).length === 0 && (
-              <p className="text-sm text-muted-foreground">No goals yet.</p>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(data.goals ?? []).map((g) => (
-                <GoalCard key={g.id} goal={g} />
-              ))}
-            </div>
-          </div>
-        </>
       )}
     </div>
   );
@@ -133,66 +230,114 @@ function LivePlan() {
 function BreakdownRow({
   label,
   amount,
-  tone,
+  prefix,
+  highlight,
+  detail,
 }: {
   label: string;
   amount: number;
-  tone: "credit" | "debit" | "muted";
+  prefix: string;
+  highlight?: boolean;
+  detail: string;
 }) {
-  const color =
-    tone === "credit"
-      ? "var(--credit)"
-      : tone === "debit"
-      ? "var(--debit)"
-      : undefined;
+  const [open, setOpen] = useState(false);
   return (
-    <div className="px-5 py-3.5">
-      <div className="flex items-center justify-between text-sm">
-        <span>{label}</span>
+    <div className={highlight ? "bg-secondary/40" : ""}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full px-5 py-4 flex items-center justify-between text-sm hover:bg-secondary/30 transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <span className={highlight ? "font-medium" : ""}>{label}</span>
+          <Info className="h-3 w-3 text-muted-foreground/60" />
+        </span>
         <span
-          className="tabular-nums font-medium"
-          style={color ? { color } : undefined}
+          className={`tabular-nums ${
+            highlight ? "font-semibold text-base" : "font-medium"
+          }`}
         >
+          {prefix && (
+            <span className="text-muted-foreground mr-1.5">{prefix}</span>
+          )}
           {formatINR(amount)}
         </span>
-      </div>
+      </button>
+      {open && (
+        <div className="px-5 pb-4 text-xs text-muted-foreground leading-relaxed">
+          {detail}
+        </div>
+      )}
     </div>
   );
 }
 
 function GoalCard({ goal }: { goal: PlanGoal }) {
+  const [open, setOpen] = useState(false);
   const pct = Math.min(100, Math.max(0, goal.percent_complete));
-  const status = goal.status;
-  const styles = statusStyles(status);
+  const styles = statusStyles(goal.status);
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-medium truncate">{goal.name}</p>
-          <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
-            {formatINR(goal.current_amount)} / {formatINR(goal.target_amount)}
-          </p>
+    <div className="rounded-xl border border-border bg-card">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full text-left p-4"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-medium truncate">{goal.name}</p>
+            {goal.target_date && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Target {formatDate(goal.target_date)}
+              </p>
+            )}
+          </div>
+          <span
+            className="text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap"
+            style={{ backgroundColor: styles.bg, color: styles.fg }}
+          >
+            {statusLabel(goal.status)}
+          </span>
         </div>
-        <span
-          className="text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap"
-          style={{ backgroundColor: styles.bg, color: styles.fg }}
-        >
-          {statusLabel(status)}
-        </span>
-      </div>
-      <div className="mt-3 h-1.5 bg-secondary rounded-full overflow-hidden">
-        <div
-          className="h-full transition-all"
-          style={{ width: `${pct}%`, backgroundColor: styles.fg }}
-        />
-      </div>
-      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-        <span>{pct.toFixed(1)}% complete</span>
-        <span className="tabular-nums">
-          {formatINR(goal.required_monthly_savings)}/mo
-        </span>
-      </div>
+
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-xs text-muted-foreground tabular-nums mb-1.5">
+            <span>
+              {formatINR(goal.current_amount)} /{" "}
+              {formatINR(goal.target_amount)}
+            </span>
+            <span>{pct.toFixed(0)}%</span>
+          </div>
+          <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+            <div
+              className="h-full transition-all"
+              style={{ width: `${pct}%`, backgroundColor: styles.fg }}
+            />
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between">
+          <p className="text-xs text-foreground/80">
+            Save{" "}
+            <span className="tabular-nums font-medium">
+              {formatINR(goal.required_monthly_savings)}
+            </span>
+            /month to stay on track
+          </p>
+          <ChevronDown
+            className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
+          />
+        </div>
+      </button>
+      {open && (
+        <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground leading-relaxed">
+          Required monthly savings is derived from the gap between{" "}
+          {formatINR(goal.target_amount - goal.current_amount)} remaining and
+          the months until {formatDate(goal.target_date)}. Status reflects
+          whether your current pace meets that schedule.
+        </div>
+      )}
     </div>
   );
 }
@@ -204,7 +349,9 @@ function statusLabel(s: string) {
 }
 
 function statusStyles(s: string): { bg: string; fg: string } {
-  if (s === "behind") return { bg: "oklch(0.92 0.04 25)", fg: "oklch(0.45 0.12 25)" };
-  if (s === "at_risk") return { bg: "oklch(0.94 0.05 80)", fg: "oklch(0.5 0.11 75)" };
-  return { bg: "oklch(0.93 0.05 150)", fg: "oklch(0.42 0.09 150)" };
+  if (s === "behind")
+    return { bg: "oklch(0.94 0.03 25)", fg: "oklch(0.48 0.10 25)" };
+  if (s === "at_risk")
+    return { bg: "oklch(0.95 0.04 80)", fg: "oklch(0.52 0.09 75)" };
+  return { bg: "oklch(0.94 0.04 160)", fg: "oklch(0.45 0.08 160)" };
 }
