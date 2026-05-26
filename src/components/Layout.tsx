@@ -3,9 +3,10 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 const nav = [
   { to: "/", label: "Live Plan" },
   { to: "/transactions", label: "Transactions" },
-  { to: "/import", label: "Import CSV" },
-  { to: "/fixed", label: "Fixed Expenses" },
   { to: "/goals", label: "Goals" },
+  { to: "/fixed", label: "Fixed Expenses" },
+  { to: "/debts", label: "Debts" },
+  { to: "/chat", label: "Chat" },
 ];
 
 export function Layout({ children }: { children?: React.ReactNode }) {
@@ -13,11 +14,11 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto max-w-5xl px-6 py-5 flex items-center justify-between">
+        <div className="mx-auto max-w-5xl px-6 py-5 flex items-center justify-between flex-wrap gap-3">
           <Link to="/" className="text-lg font-semibold tracking-tight">
             Dhan Dost
           </Link>
-          <nav className="flex gap-1 text-sm">
+          <nav className="flex gap-1 text-sm flex-wrap">
             {nav.map((n) => {
               const active = n.to === "/" ? path === "/" : path.startsWith(n.to);
               return (

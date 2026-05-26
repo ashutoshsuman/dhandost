@@ -1,0 +1,17 @@
+export const DEFAULT_CATEGORIES = [
+  "Salary",
+  "Freelance",
+  "Bonus",
+  "Refund",
+  "Food",
+  "Transport",
+  "Shopping",
+  "Entertainment",
+  "Family Transfer",
+  "Utilities",
+  "Rent",
+  "EMI",
+  "SIP",
+  "Transfer",
+  "Other",
+];
