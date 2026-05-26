@@ -146,15 +146,15 @@ function ImportPage() {
       <div>
         <h1 className="text-2xl font-semibold">Import CSV</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload a bank statement. Map the columns, preview, then confirm.
+          Upload a bank statement (CSV, XLS/XLSX, or text-based PDF). Map the columns, preview, then confirm.
         </p>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-5">
-        <Field label="CSV file">
+        <Field label="Statement file">
           <input
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xls,.xlsx,.xlsm,.pdf,text/csv,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
             className="text-sm"
           />
