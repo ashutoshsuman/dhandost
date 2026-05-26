@@ -70,26 +70,27 @@ function ImportPage() {
   const [defaultCategory, setDefaultCategory] = useState("");
   const [fileName, setFileName] = useState("");
 
-  const onFile = (file: File) => {
+  const onFile = async (file: File) => {
     setFileName(file.name);
-    Papa.parse<Record<string, string>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (res) => {
-        const hs = res.meta.fields ?? [];
-        setHeaders(hs);
-        setRows(res.data);
-        const hasDebitCredit = guessCol(hs, [/debit|withdraw/i]) && guessCol(hs, [/credit|deposit/i]);
-        setMapping({
-          date: guessCol(hs, [/date|txn.?date|value.?date/i]),
-          description: guessCol(hs, [/desc|narration|particulars|details/i]),
-          amount: guessCol(hs, [/^amount$|amt/i]),
-          debit: guessCol(hs, [/debit|withdraw/i]),
-          credit: guessCol(hs, [/credit|deposit/i]),
-          mode: hasDebitCredit ? "split" : "single",
-        });
-      },
-    });
+    setHeaders([]);
+    setRows([]);
+    try {
+      const { headers: hs, rows: rs } = await parseFile(file);
+      setHeaders(hs);
+      setRows(rs);
+      const hasDebitCredit = guessCol(hs, [/debit|withdraw/i]) && guessCol(hs, [/credit|deposit/i]);
+      setMapping({
+        date: guessCol(hs, [/date|txn.?date|value.?date/i]),
+        description: guessCol(hs, [/desc|narration|particulars|details|remarks/i]),
+        amount: guessCol(hs, [/^amount$|amt/i]),
+        debit: guessCol(hs, [/debit|withdraw/i]),
+        credit: guessCol(hs, [/credit|deposit/i]),
+        mode: hasDebitCredit ? "split" : "single",
+      });
+    } catch (e) {
+      console.error("Failed to parse file", e);
+      alert("Could not parse this file. Try CSV or XLSX, or a text-based PDF.");
+    }
   };
 
   const preview = useMemo(() => {
