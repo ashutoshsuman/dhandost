@@ -155,9 +155,82 @@ function TransactionsPage() {
           </tbody>
         </table>
       </div>
+
+      {planFor && (
+        <PlanModal
+          tx={planFor}
+          computing={computing}
+          onClose={() => { if (!computing) setPlanFor(null); }}
+          onPick={async (kind) => {
+            if (kind === "planned") { setPlanFor(null); return; }
+            setComputing(true);
+            try {
+              const resp = await fetchThreePaths({
+                trigger_type: kind,
+                trigger_amount: Number(planFor.amount),
+                trigger_description: planFor.description,
+              });
+              storePathsResponse(resp);
+              navigate({ to: "/paths" });
+            } catch (e) {
+              alert((e as Error).message);
+              setComputing(false);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
+
+function PlanModal({
+  tx, computing, onClose, onPick,
+}: {
+  tx: Transaction;
+  computing: boolean;
+  onClose: () => void;
+  onPick: (kind: "surprise_income" | "surprise_expense" | "planned") => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {computing ? (
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Relax while computing your options…</p>
+          </div>
+        ) : (
+          <>
+            <h3 className="text-base font-semibold">
+              Was this a surprise income, a surprise expense, or a planned transaction?
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {formatDate(tx.occurred_at)} · {formatINR(tx.amount)} {tx.description ? `· ${tx.description}` : ""}
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <Button onClick={() => onPick("surprise_income")} disabled={tx.direction !== "credit"}>
+                Surprise income
+              </Button>
+              <Button onClick={() => onPick("surprise_expense")} disabled={tx.direction !== "debit"}>
+                Surprise expense
+              </Button>
+              <Button variant="outline" onClick={() => onPick("planned")}>Planned</Button>
+            </div>
+            <div className="mt-4 text-right">
+              <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground">
+                Cancel
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 function CategoryEditor({
   value, categories, onSave, onCancel,
