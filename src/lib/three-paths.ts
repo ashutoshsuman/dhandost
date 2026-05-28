@@ -25,10 +25,12 @@ export type DiscretionaryImpact = {
 export type PathOption = {
   label: string;
   description: string;
+  priority_value?: string;
   allocation: AllocationStep[];
   goal_impacts: GoalImpact[];
   discretionary_impact?: DiscretionaryImpact;
 };
+
 
 export type ThreePathsResponse = {
   paths: PathOption[];
