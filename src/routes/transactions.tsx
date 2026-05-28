@@ -9,6 +9,7 @@ import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { fetchThreePaths, storePathsResponse } from "@/lib/three-paths";
 
+export const Route = createFileRoute("/transactions")({
   component: () => (
     <Layout>
       <TransactionsPage />
@@ -18,8 +19,12 @@ import { fetchThreePaths, storePathsResponse } from "@/lib/three-paths";
 
 function TransactionsPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [planFor, setPlanFor] = useState<Transaction | null>(null);
+  const [computing, setComputing] = useState(false);
+
 
   const { data: txs, isLoading } = useQuery({
     queryKey: ["transactions"],
