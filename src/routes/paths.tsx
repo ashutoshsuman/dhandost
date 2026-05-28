@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Layout } from "@/components/Layout";
@@ -144,6 +144,7 @@ async function applyAllocations(steps: AllocationStep[]) {
 
 function PathsPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const [data, setData] = useState<ThreePathsResponse | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
@@ -169,9 +170,14 @@ function PathsPage() {
         console.error("path_selections insert failed:", error);
       }
       setApplied(true);
-      toast(
-        "New plan has been saved. We'll check back in 30 days to see how it went.",
-      );
+      if (path) {
+        toast(`Applied '${path.label}' — your goals have been updated.`);
+      } else {
+        toast("Plan unchanged.");
+      }
+      try {
+        await router.invalidate();
+      } catch {}
       navigate({ to: "/" });
     } catch (err) {
       console.error("Failed to apply path:", err);
@@ -182,16 +188,27 @@ function PathsPage() {
 
   if (!data) return null;
 
+  const isIncome = data.trigger_type === "surprise_income";
+  const heading = isIncome
+    ? `Three ways to use this ${formatINR(data.trigger_amount)}`
+    : `Three ways to absorb this ${formatINR(data.trigger_amount)}`;
+  const subLabel = isIncome ? "Surprise income" : "Surprise expense";
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Three paths to consider</h1>
+        <h1 className="text-2xl font-semibold">{heading}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Based on {data.trigger_type === "surprise_income" ? "a surprise income" : "a surprise expense"} of{" "}
-          {formatINR(data.trigger_amount)}
-          {data.trigger_description ? ` — ${data.trigger_description}` : ""}.
+          {subLabel}
+          {data.trigger_description ? ` — ${data.trigger_description}` : ""}
         </p>
       </div>
+
+      {applied && (
+        <div className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+          Path applied.
+        </div>
+      )}
 
       <div className="space-y-4">
         {data.paths.map((p, i) => (
@@ -239,7 +256,7 @@ function PathCard({
             {path.allocation.map((a, i) => (
               <li key={i} className="tabular-nums">
                 {a.action === "keep_flexible" ? (
-                  <>→ {formatINR(safeNum(a.amount))} kept as flexible buffer</>
+                  <>→ {formatINR(safeNum(a.amount))} kept as flexible buffer (not allocated)</>
                 ) : (
                   <>
                     → {formatINR(safeNum(a.amount))} to {a.target}{" "}
@@ -270,13 +287,18 @@ function PathCard({
         </div>
       )}
 
-      {path.discretionary_impact &&
-      safeNum(path.discretionary_impact.amount_per_month) > 0 ? (
-        <div className="text-sm text-muted-foreground">
-          Discretionary spending: {formatINR(safeNum(path.discretionary_impact.amount_per_month))} less per month
-          {path.discretionary_impact.months > 1 ? ` for ${path.discretionary_impact.months} months` : null}
-        </div>
-      ) : null}
+      {(() => {
+        const raw = Number(path.discretionary_impact?.amount_per_month);
+        if (!path.discretionary_impact || !Number.isFinite(raw) || raw === 0) return null;
+        const direction = raw < 0 ? "less" : "more";
+        const months = Number(path.discretionary_impact.months);
+        return (
+          <div className="text-sm text-muted-foreground">
+            Discretionary spending: {formatINR(Math.abs(raw))} {direction} per month
+            {Number.isFinite(months) && months > 1 ? ` for ${months} months` : null}
+          </div>
+        );
+      })()}
 
       <div className="pt-2">
         <Button onClick={onChoose} disabled={disabled} className="w-full sm:w-auto">
