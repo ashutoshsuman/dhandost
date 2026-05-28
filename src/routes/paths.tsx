@@ -325,9 +325,10 @@ function PathCard({
 
       <div className="pt-2">
         <Button onClick={onChoose} disabled={disabled} className="w-full sm:w-auto">
-          {saving ? "Applying…" : "Choose this path"}
+          {applied ? "Path applied" : saving ? "Applying the selecting plan…" : "Choose this path"}
         </Button>
       </div>
+
     </div>
   );
 }
