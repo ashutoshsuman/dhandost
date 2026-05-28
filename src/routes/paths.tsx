@@ -235,14 +235,17 @@ function PathsPage() {
 
       <div className="space-y-4">
         {data.paths.map((p, i) => (
+        {data.paths.map((p, i) => (
           <PathCard
             key={i}
             path={p}
             saving={saving === p.label}
             disabled={saving !== null || applied}
+            applied={applied}
             onChoose={() => choose(p)}
           />
         ))}
+
       </div>
 
       <div className="rounded-lg border border-border bg-secondary/30 p-4 text-xs text-muted-foreground">
