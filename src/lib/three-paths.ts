@@ -8,6 +8,8 @@ export type AllocationStep = {
   amount: number;
   target: string;
   action: string;
+  monthly_amount?: number;
+  duration_months?: number;
 };
 
 export type GoalImpact = {
