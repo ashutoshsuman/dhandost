@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui-primitives";
-import { formatINR } from "@/lib/format";
+
 import { supabase } from "@/lib/supabase";
 import {
   applyPath,
@@ -13,6 +13,35 @@ import {
   type PathOption,
   type ThreePathsResponse,
 } from "@/lib/three-paths";
+
+function formatINR(n: number): string {
+  return `₹${Math.round(n).toLocaleString("en-IN")}`;
+}
+
+function renderAllocation(a: AllocationStep): string {
+  switch (a.action) {
+    case "reduce_discretionary": {
+      const monthly = a.monthly_amount ?? 0;
+      const months = a.duration_months ?? 0;
+      const total = a.amount ?? 0;
+      if (!monthly || !months) {
+        return `→ Reduce ${a.target} by ${formatINR(total)}`;
+      }
+      return `→ Reduce ${a.target} by ${formatINR(monthly)}/month for ${months} months (${formatINR(total)} total)`;
+    }
+    case "delay_goal":
+      return `→ Delay ${a.target}`;
+    case "keep_flexible":
+      return `→ ${formatINR(a.amount)} kept as flexible buffer`;
+    case "pay_down_debt":
+      return `→ ${formatINR(a.amount)} toward ${a.target} (debt)`;
+    case "topup_cushion":
+      return `→ ${formatINR(a.amount)} into ${a.target}`;
+    case "fund_goal":
+    default:
+      return `→ ${formatINR(a.amount)} into ${a.target}`;
+  }
+}
 
 
 export const Route = createFileRoute("/paths")({
@@ -287,14 +316,7 @@ function PathCard({
           <ul className="space-y-1 text-sm">
             {path.allocation.map((a, i) => (
               <li key={i} className="tabular-nums">
-                {a.action === "keep_flexible" ? (
-                  <>→ {formatINR(safeNum(a.amount))} kept as flexible buffer (not allocated)</>
-                ) : (
-                  <>
-                    → {formatINR(safeNum(a.amount))} to {a.target}{" "}
-                    <span className="text-muted-foreground">({a.action})</span>
-                  </>
-                )}
+                {renderAllocation(a)}
               </li>
             ))}
           </ul>
@@ -319,18 +341,14 @@ function PathCard({
         </div>
       )}
 
-      {(() => {
-        const raw = Number(path.discretionary_impact?.amount_per_month);
-        if (!path.discretionary_impact || !Number.isFinite(raw) || raw === 0) return null;
-        const direction = raw < 0 ? "less" : "more";
-        const months = Number(path.discretionary_impact.months);
-        return (
-          <div className="text-sm text-muted-foreground">
-            Discretionary spending: {formatINR(Math.abs(raw))} {direction} per month
-            {Number.isFinite(months) && months > 1 ? ` for ${months} months` : null}
-          </div>
-        );
-      })()}
+      {path.discretionary_impact &&
+        Number.isFinite(path.discretionary_impact.amount_per_month) &&
+        path.discretionary_impact.amount_per_month !== 0 && (
+          <p className="text-sm text-muted-foreground">
+            Discretionary spending: {formatINR(Math.abs(path.discretionary_impact.amount_per_month))} less per month
+            {path.discretionary_impact.months > 1 ? ` for ${path.discretionary_impact.months} months` : null}
+          </p>
+        )}
 
       <div className="pt-2">
         <Button onClick={onChoose} disabled={disabled} className="w-full sm:w-auto">
