@@ -263,8 +263,9 @@ function PathsPage() {
 }
 
 function PathCard({
-  path, saving, disabled, onChoose,
-}: { path: PathOption; saving: boolean; disabled: boolean; onChoose: () => void }) {
+  path, saving, disabled, applied, onChoose,
+}: { path: PathOption; saving: boolean; disabled: boolean; applied: boolean; onChoose: () => void }) {
+
   return (
     <div className="rounded-lg border border-border bg-card p-6 space-y-4">
       <div>
