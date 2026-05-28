@@ -6,11 +6,14 @@ import { Button } from "@/components/ui-primitives";
 import { formatINR } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import {
+  applyPath,
+  markPlanAppliedForTx,
   readPathsResponse,
   type AllocationStep,
   type PathOption,
   type ThreePathsResponse,
 } from "@/lib/three-paths";
+
 
 export const Route = createFileRoute("/paths")({
   component: () => (
