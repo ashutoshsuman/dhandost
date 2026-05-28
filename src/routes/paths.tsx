@@ -157,7 +157,8 @@ function PathsPage() {
     if (!d) navigate({ to: "/transactions" });
     else setData(d);
   }, [navigate]);
-  const choose = async (path: PathOption | null) => {
+  const choose = async (path: PathOption | null, index = -1) => {
+
     if (saving || applied) return; // guard against double-submit
     const label = path?.label ?? null;
     setSaving(label ?? "__none__");
