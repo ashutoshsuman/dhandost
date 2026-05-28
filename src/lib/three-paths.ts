@@ -113,7 +113,6 @@ export async function applyPath(input: {
     }),
   });
 
-  });
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;
     try {
