@@ -157,24 +157,43 @@ function PathsPage() {
     if (!d) navigate({ to: "/transactions" });
     else setData(d);
   }, [navigate]);
-
   const choose = async (path: PathOption | null) => {
     if (saving || applied) return; // guard against double-submit
     const label = path?.label ?? null;
     setSaving(label ?? "__none__");
     try {
       if (path) {
-        await applyAllocations(path.allocation ?? []);
-      }
-      const { error } = await supabase.from("path_selections").insert({
-        path_chosen: label,
-      });
-      if (error) {
-        console.error("path_selections insert failed:", error);
+        if (!data?.path_selection_id) {
+          throw new Error("Missing plan reference — please regenerate the plan.");
+        }
+        // Grab the user's access token if signed in; falls back to publishable key.
+        let accessToken: string | null = null;
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          accessToken = sessionData.session?.access_token ?? null;
+        } catch {
+          accessToken = null;
+        }
+        await applyPath({
+          path_selection_id: data.path_selection_id,
+          chosen_path_label: path.label,
+          access_token: accessToken,
+        });
+        // Hide "Help me with a plan" for this transaction going forward.
+        if (data.trigger_transaction_id) {
+          markPlanAppliedForTx(data.trigger_transaction_id);
+        }
+      } else {
+        const { error } = await supabase.from("path_selections").insert({
+          path_chosen: label,
+        });
+        if (error) console.error("path_selections insert failed:", error);
       }
       setApplied(true);
       if (path) {
-        toast(`Applied '${path.label}' — your goals have been updated.`);
+        toast(
+          `New Plan Applied '${path.label}' — your goals have been updated accordingly.`,
+        );
       } else {
         toast("Plan unchanged.");
       }
@@ -184,9 +203,11 @@ function PathsPage() {
       navigate({ to: "/" });
     } catch (err) {
       console.error("Failed to apply path:", err);
-      toast.error("Couldn't apply this path. Please try again.");
+      toast.error("Couldn't apply this plan — try again");
       setSaving(null);
     }
+  };
+
   };
 
   if (!data) return null;
