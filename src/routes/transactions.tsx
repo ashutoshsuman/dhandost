@@ -1,14 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Pencil, Check, X } from "lucide-react";
+import { Pencil, Check, X, Loader2, Sparkles } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { supabase, type Transaction } from "@/lib/supabase";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
+import { fetchThreePaths, storePathsResponse } from "@/lib/three-paths";
 
-export const Route = createFileRoute("/transactions")({
   component: () => (
     <Layout>
       <TransactionsPage />
@@ -134,8 +134,17 @@ function TransactionsPage() {
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
+                  <button
+                    onClick={() => setPlanFor(t)}
+                    className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    title="Help me with a plan"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Help me with a plan
+                  </button>
                   <Button variant="destructive" onClick={() => del.mutate(t.id)}>Delete</Button>
                 </td>
+
               </tr>
             ))}
           </tbody>
