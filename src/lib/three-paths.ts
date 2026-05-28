@@ -1,5 +1,5 @@
 export const THREE_PATHS_URL =
-  "https://ibjsdafxjggjyamkdjeh.supabase.co/functions/v1/generate-three-paths";
+  "https://ibjsdafxjggjyamkdjeh.supabase.co/functions/v1/clever-task";
 export const PUBLISHABLE_KEY = "sb_publishable_ztTyEdZPNNfk5PjttJimDg_-g3fmC0D";
 
 export type AllocationStep = {
