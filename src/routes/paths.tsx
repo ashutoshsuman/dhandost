@@ -188,16 +188,27 @@ function PathsPage() {
 
   if (!data) return null;
 
+  const isIncome = data.trigger_type === "surprise_income";
+  const heading = isIncome
+    ? `Three ways to use this ${formatINR(data.trigger_amount)}`
+    : `Three ways to absorb this ${formatINR(data.trigger_amount)}`;
+  const subLabel = isIncome ? "Surprise income" : "Surprise expense";
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Three paths to consider</h1>
+        <h1 className="text-2xl font-semibold">{heading}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Based on {data.trigger_type === "surprise_income" ? "a surprise income" : "a surprise expense"} of{" "}
-          {formatINR(data.trigger_amount)}
-          {data.trigger_description ? ` — ${data.trigger_description}` : ""}.
+          {subLabel}
+          {data.trigger_description ? ` — ${data.trigger_description}` : ""}
         </p>
       </div>
+
+      {applied && (
+        <div className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+          Path applied.
+        </div>
+      )}
 
       <div className="space-y-4">
         {data.paths.map((p, i) => (
