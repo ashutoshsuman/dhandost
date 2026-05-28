@@ -183,7 +183,6 @@ function PathsPage() {
           access_token: accessToken,
         });
 
-        });
         // Hide "Help me with a plan" for this transaction going forward.
         if (data.trigger_transaction_id) {
           markPlanAppliedForTx(data.trigger_transaction_id);
