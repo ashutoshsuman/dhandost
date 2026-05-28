@@ -1,13 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import { Pencil, Check, X, Loader2, Sparkles } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { supabase, type Transaction } from "@/lib/supabase";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
-import { fetchThreePaths, storePathsResponse } from "@/lib/three-paths";
+import { fetchThreePaths, storePathsResponse, getAppliedPlanTxIds } from "@/lib/three-paths";
+
 
 export const Route = createFileRoute("/transactions")({
   component: () => (
@@ -24,6 +26,12 @@ function TransactionsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [planFor, setPlanFor] = useState<Transaction | null>(null);
   const [computing, setComputing] = useState(false);
+  const [appliedTxIds, setAppliedTxIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setAppliedTxIds(getAppliedPlanTxIds());
+  }, []);
+
 
 
   const { data: txs, isLoading } = useQuery({
@@ -139,14 +147,22 @@ function TransactionsPage() {
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  <button
-                    onClick={() => setPlanFor(t)}
-                    className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
-                    title="Help me with a plan"
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    Help me with a plan
-                  </button>
+                  {appliedTxIds.includes(t.id) ? (
+                    <span className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground">
+                      <Check className="h-3 w-3" />
+                      Plan applied
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setPlanFor(t)}
+                      className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      title="Help me with a plan"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      Help me with a plan
+                    </button>
+                  )}
+
                   <Button variant="destructive" onClick={() => del.mutate(t.id)}>Delete</Button>
                 </td>
 
@@ -169,6 +185,7 @@ function TransactionsPage() {
                 trigger_type: kind,
                 trigger_amount: Number(planFor.amount),
                 trigger_description: planFor.description,
+                trigger_transaction_id: planFor.id,
               });
               storePathsResponse(resp);
               navigate({ to: "/paths" });
@@ -177,6 +194,7 @@ function TransactionsPage() {
               setComputing(false);
             }
           }}
+
         />
       )}
     </div>
