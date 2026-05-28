@@ -255,8 +255,8 @@ function PathCard({
           <ul className="space-y-1 text-sm">
             {path.allocation.map((a, i) => (
               <li key={i} className="tabular-nums">
+                {a.action === "keep_flexible" ? (
                   <>→ {formatINR(safeNum(a.amount))} kept as flexible buffer (not allocated)</>
-                  <>→ {formatINR(safeNum(a.amount))} kept as flexible buffer</>
                 ) : (
                   <>
                     → {formatINR(safeNum(a.amount))} to {a.target}{" "}
