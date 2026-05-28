@@ -178,7 +178,11 @@ function PathsPage() {
         await applyPath({
           path_selection_id: data.path_selection_id,
           chosen_path_label: path.label,
+          chosen_index: index,
+          priority_value: path.priority_value ?? null,
           access_token: accessToken,
+        });
+
         });
         // Hide "Help me with a plan" for this transaction going forward.
         if (data.trigger_transaction_id) {
