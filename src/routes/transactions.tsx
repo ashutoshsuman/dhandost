@@ -179,11 +179,13 @@ function TransactionsPage() {
           onClose={() => { if (!computing) setPlanFor(null); }}
           onPick={async (kind) => {
             if (kind === "planned") { setPlanFor(null); return; }
-            setComputing(true);
-            try {
               const resp = await fetchThreePaths({
                 trigger_type: kind,
                 trigger_amount: Number(planFor.amount),
+                trigger_description: planFor.description,
+                trigger_transaction_id: planFor.id,
+              });
+
                 trigger_description: planFor.description,
               });
               storePathsResponse(resp);
