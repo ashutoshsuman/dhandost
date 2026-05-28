@@ -29,7 +29,7 @@ export const Button = React.forwardRef<
   React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost" | "outline" | "destructive" }
 >(({ className = "", variant = "primary", ...props }, ref) => {
   const styles = {
-    primary: "bg-primary text-primary-foreground hover:bg-primary/90",
+    primary: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
     ghost: "hover:bg-secondary",
     outline: "border border-border hover:bg-secondary",
     destructive: "text-destructive hover:bg-destructive/10",
@@ -37,7 +37,7 @@ export const Button = React.forwardRef<
   return (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none ${styles} ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none ${styles} ${className}`}
       {...props}
     />
   );
