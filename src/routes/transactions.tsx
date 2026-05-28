@@ -25,6 +25,12 @@ function TransactionsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [planFor, setPlanFor] = useState<Transaction | null>(null);
   const [computing, setComputing] = useState(false);
+  const [appliedTxIds, setAppliedTxIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setAppliedTxIds(getAppliedPlanTxIds());
+  }, []);
+
 
 
   const { data: txs, isLoading } = useQuery({
