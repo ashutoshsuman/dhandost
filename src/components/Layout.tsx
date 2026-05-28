@@ -33,10 +33,10 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                 <Link
                   key={n.to}
                   to={n.to}
-                  className={`px-3 py-1.5 rounded-md transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
                     active
-                      ? "bg-secondary text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}
                 >
                   {n.label}
