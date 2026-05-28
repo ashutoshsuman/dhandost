@@ -246,7 +246,8 @@ function PathsPage() {
             saving={saving === p.label}
             disabled={saving !== null || applied}
             applied={applied}
-            onChoose={() => choose(p)}
+            onChoose={() => choose(p, i)}
+
           />
         ))}
 
