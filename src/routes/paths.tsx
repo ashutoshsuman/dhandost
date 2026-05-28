@@ -208,7 +208,6 @@ function PathsPage() {
     }
   };
 
-  };
 
   if (!data) return null;
 
