@@ -144,6 +144,7 @@ async function applyAllocations(steps: AllocationStep[]) {
 
 function PathsPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const [data, setData] = useState<ThreePathsResponse | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
@@ -169,9 +170,14 @@ function PathsPage() {
         console.error("path_selections insert failed:", error);
       }
       setApplied(true);
-      toast(
-        "New plan has been saved. We'll check back in 30 days to see how it went.",
-      );
+      if (path) {
+        toast(`Applied '${path.label}' — your goals have been updated.`);
+      } else {
+        toast("Plan unchanged.");
+      }
+      try {
+        await router.invalidate();
+      } catch {}
       navigate({ to: "/" });
     } catch (err) {
       console.error("Failed to apply path:", err);
