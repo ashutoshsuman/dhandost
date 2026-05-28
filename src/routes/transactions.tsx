@@ -147,14 +147,22 @@ function TransactionsPage() {
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  <button
-                    onClick={() => setPlanFor(t)}
-                    className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
-                    title="Help me with a plan"
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    Help me with a plan
-                  </button>
+                  {appliedTxIds.includes(t.id) ? (
+                    <span className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground">
+                      <Check className="h-3 w-3" />
+                      Plan applied
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setPlanFor(t)}
+                      className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      title="Help me with a plan"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      Help me with a plan
+                    </button>
+                  )}
+
                   <Button variant="destructive" onClick={() => del.mutate(t.id)}>Delete</Button>
                 </td>
 
