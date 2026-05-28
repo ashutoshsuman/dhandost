@@ -41,22 +41,20 @@ function PathsPage() {
     else setData(d);
   }, [navigate]);
 
-  if (!data) return null;
-
   const choose = async (label: string | null) => {
     setSaving(label ?? "__none__");
-    try {
-      const { error } = await supabase.from("path_selections").insert({
-        path_chosen: label,
-        trigger_type: data.trigger_type,
-        trigger_amount: data.trigger_amount,
-        trigger_description: data.trigger_description,
-      });
-      if (error) throw error;
+    const { error } = await supabase.from("path_selections").insert({
+      path_chosen: label,
+    });
+    if (error) {
+      // Don't block the redirect on persistence issues — surface and continue.
+      console.error("path_selections insert failed:", error);
+      toast.error("Couldn't save selection, but updating your plan anyway.");
+    } else {
       toast("New plan has been saved. We'll check back in 30 days to see how it went.");
-      navigate({ to: "/" });
-    } catch (e) {
-      toast.error((e as Error).message);
+    }
+    navigate({ to: "/" });
+  };
       setSaving(null);
     }
   };
