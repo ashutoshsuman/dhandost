@@ -7,7 +7,8 @@ import { supabase, type Transaction } from "@/lib/supabase";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
-import { fetchThreePaths, storePathsResponse } from "@/lib/three-paths";
+import { fetchThreePaths, storePathsResponse, getAppliedPlanTxIds } from "@/lib/three-paths";
+
 
 export const Route = createFileRoute("/transactions")({
   component: () => (
