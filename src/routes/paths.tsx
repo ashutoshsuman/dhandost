@@ -55,9 +55,6 @@ function PathsPage() {
     }
     navigate({ to: "/" });
   };
-      setSaving(null);
-    }
-  };
 
   return (
     <div className="space-y-6">
