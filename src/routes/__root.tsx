@@ -13,8 +13,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Dhan Dost — Personal Finance" },
-      { name: "description", content: "Quiet personal finance tracking." },
+      { title: "DhanDost — Your Personal Finance Friend" },
+      { name: "description", content: "AI powered personal finance assistant" },
+      { property: "og:title", content: "DhanDost — Your Personal Finance Friend" },
+      { name: "twitter:title", content: "DhanDost — Your Personal Finance Friend" },
+      { property: "og:description", content: "AI powered personal finance assistant" },
+      { name: "twitter:description", content: "AI powered personal finance assistant" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c68eef3f-1358-4669-9d94-2f7bac0ab91f/id-preview-667efe6d--8c8dba9e-3134-4569-b878-913cb4f97ae2.lovable.app-1780000197479.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c68eef3f-1358-4669-9d94-2f7bac0ab91f/id-preview-667efe6d--8c8dba9e-3134-4569-b878-913cb4f97ae2.lovable.app-1780000197479.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
