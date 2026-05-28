@@ -287,13 +287,18 @@ function PathCard({
         </div>
       )}
 
-      {path.discretionary_impact &&
-      safeNum(path.discretionary_impact.amount_per_month) > 0 ? (
-        <div className="text-sm text-muted-foreground">
-          Discretionary spending: {formatINR(safeNum(path.discretionary_impact.amount_per_month))} less per month
-          {path.discretionary_impact.months > 1 ? ` for ${path.discretionary_impact.months} months` : null}
-        </div>
-      ) : null}
+      {(() => {
+        const raw = Number(path.discretionary_impact?.amount_per_month);
+        if (!path.discretionary_impact || !Number.isFinite(raw) || raw === 0) return null;
+        const direction = raw < 0 ? "less" : "more";
+        const months = Number(path.discretionary_impact.months);
+        return (
+          <div className="text-sm text-muted-foreground">
+            Discretionary spending: {formatINR(Math.abs(raw))} {direction} per month
+            {Number.isFinite(months) && months > 1 ? ` for ${months} months` : null}
+          </div>
+        );
+      })()}
 
       <div className="pt-2">
         <Button onClick={onChoose} disabled={disabled} className="w-full sm:w-auto">
