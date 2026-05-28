@@ -7,6 +7,7 @@ import { formatINR } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import {
   readPathsResponse,
+  type AllocationStep,
   type PathOption,
   type ThreePathsResponse,
 } from "@/lib/three-paths";
@@ -30,10 +31,122 @@ const statusLabel: Record<string, string> = {
   behind: "Behind",
 };
 
+type Goal = {
+  id: string;
+  name: string;
+  current_amount: number | null;
+  target_date: string | null;
+};
+type Debt = { id: string; name: string; current_balance: number };
+
+function safeNum(n: unknown): number {
+  const v = Number(n);
+  return Number.isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : 0;
+}
+
+function matchGoal(goals: Goal[], target: string): Goal | undefined {
+  const t = (target || "").toLowerCase();
+  return (
+    goals.find((g) => g.name?.toLowerCase() === t) ||
+    goals.find((g) => g.name?.toLowerCase().includes(t)) ||
+    goals.find((g) => t.includes(g.name?.toLowerCase() ?? ""))
+  );
+}
+function matchDebt(debts: Debt[], target: string): Debt | undefined {
+  const t = (target || "").toLowerCase();
+  return (
+    debts.find((d) => d.name?.toLowerCase() === t) ||
+    debts.find((d) => d.name?.toLowerCase().includes(t)) ||
+    debts.find((d) => t.includes(d.name?.toLowerCase() ?? ""))
+  );
+}
+
+async function applyAllocations(steps: AllocationStep[]) {
+  if (!steps?.length) return;
+
+  const [{ data: goalsRaw }, { data: debtsRaw }] = await Promise.all([
+    supabase.from("goals").select("id,name,current_amount,target_date"),
+    supabase.from("debts").select("id,name,current_balance"),
+  ]);
+  const goals = (goalsRaw ?? []) as Goal[];
+  const debts = (debtsRaw ?? []) as Debt[];
+
+  // Aggregate per-target deltas to keep writes atomic-ish and avoid duplicates.
+  const goalAdds = new Map<string, number>();
+  const debtPays = new Map<string, number>();
+  const goalDelayMonths = new Map<string, number>();
+
+  for (const step of steps) {
+    const amount = safeNum(step.amount);
+    const action = step.action;
+
+    if (action === "keep_flexible") continue;
+
+    if (action === "fund_goal" || action === "topup_cushion") {
+      if (amount <= 0) continue;
+      let g = matchGoal(goals, step.target);
+      // Cushion fallback: if topup_cushion target doesn't exist, skip silently
+      // (do not invent a phantom goal). Backend should redirect, but guard here too.
+      if (!g) continue;
+      goalAdds.set(g.id, (goalAdds.get(g.id) ?? 0) + amount);
+    } else if (action === "pay_down_debt") {
+      if (amount <= 0) continue;
+      const d = matchDebt(debts, step.target);
+      if (!d) continue;
+      debtPays.set(d.id, (debtPays.get(d.id) ?? 0) + amount);
+    } else if (action === "delay_goal") {
+      const g = matchGoal(goals, step.target);
+      if (!g) continue;
+      // amount field here is interpreted as months to delay (backend convention).
+      const months = Math.max(1, Math.round(Number(step.amount) || 1));
+      goalDelayMonths.set(g.id, (goalDelayMonths.get(g.id) ?? 0) + months);
+    }
+    // reduce_discretionary: nothing to persist on goals/debts.
+  }
+
+  // Apply goal balance updates
+  for (const [id, delta] of goalAdds) {
+    const g = goals.find((x) => x.id === id)!;
+    const next = Math.max(0, Number(g.current_amount ?? 0) + delta);
+    const { error } = await supabase
+      .from("goals")
+      .update({ current_amount: next })
+      .eq("id", id);
+    if (error) throw error;
+  }
+
+  // Apply debt paydowns
+  for (const [id, delta] of debtPays) {
+    const d = debts.find((x) => x.id === id)!;
+    const next = Math.max(0, Number(d.current_balance ?? 0) - delta);
+    const { error } = await supabase
+      .from("debts")
+      .update({ current_balance: next })
+      .eq("id", id);
+    if (error) throw error;
+  }
+
+  // Push target dates forward for delay_goal steps
+  for (const [id, months] of goalDelayMonths) {
+    const g = goals.find((x) => x.id === id)!;
+    if (!g.target_date) continue;
+    const d = new Date(g.target_date);
+    if (isNaN(d.getTime())) continue;
+    d.setMonth(d.getMonth() + months);
+    const next = d.toISOString().slice(0, 10);
+    const { error } = await supabase
+      .from("goals")
+      .update({ target_date: next })
+      .eq("id", id);
+    if (error) throw error;
+  }
+}
+
 function PathsPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<ThreePathsResponse | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [applied, setApplied] = useState(false);
 
   useEffect(() => {
     const d = readPathsResponse();
@@ -41,19 +154,30 @@ function PathsPage() {
     else setData(d);
   }, [navigate]);
 
-  const choose = async (label: string | null) => {
+  const choose = async (path: PathOption | null) => {
+    if (saving || applied) return; // guard against double-submit
+    const label = path?.label ?? null;
     setSaving(label ?? "__none__");
-    const { error } = await supabase.from("path_selections").insert({
-      path_chosen: label,
-    });
-    if (error) {
-      // Don't block the redirect on persistence issues — surface and continue.
-      console.error("path_selections insert failed:", error);
-      toast.error("Couldn't save selection, but updating your plan anyway.");
-    } else {
-      toast("New plan has been saved. We'll check back in 30 days to see how it went.");
+    try {
+      if (path) {
+        await applyAllocations(path.allocation ?? []);
+      }
+      const { error } = await supabase.from("path_selections").insert({
+        path_chosen: label,
+      });
+      if (error) {
+        console.error("path_selections insert failed:", error);
+      }
+      setApplied(true);
+      toast(
+        "New plan has been saved. We'll check back in 30 days to see how it went.",
+      );
+      navigate({ to: "/" });
+    } catch (err) {
+      console.error("Failed to apply path:", err);
+      toast.error("Couldn't apply this path. Please try again.");
+      setSaving(null);
     }
-    navigate({ to: "/" });
   };
 
   if (!data) return null;
@@ -75,8 +199,8 @@ function PathsPage() {
             key={i}
             path={p}
             saving={saving === p.label}
-            disabled={saving !== null}
-            onChoose={() => choose(p.label)}
+            disabled={saving !== null || applied}
+            onChoose={() => choose(p)}
           />
         ))}
       </div>
@@ -88,7 +212,7 @@ function PathsPage() {
       <div className="flex justify-center">
         <Button
           variant="outline"
-          disabled={saving !== null}
+          disabled={saving !== null || applied}
           onClick={() => choose(null)}
         >
           {saving === "__none__" ? "Saving…" : "None of these — keep my plan unchanged"}
@@ -114,7 +238,14 @@ function PathCard({
           <ul className="space-y-1 text-sm">
             {path.allocation.map((a, i) => (
               <li key={i} className="tabular-nums">
-                → {formatINR(a.amount)} to {a.target} <span className="text-muted-foreground">({a.action})</span>
+                {a.action === "keep_flexible" ? (
+                  <>→ {formatINR(safeNum(a.amount))} kept as flexible buffer</>
+                ) : (
+                  <>
+                    → {formatINR(safeNum(a.amount))} to {a.target}{" "}
+                    <span className="text-muted-foreground">({a.action})</span>
+                  </>
+                )}
               </li>
             ))}
           </ul>
@@ -139,16 +270,17 @@ function PathCard({
         </div>
       )}
 
-      {path.discretionary_impact?.amount_per_month ? (
+      {path.discretionary_impact &&
+      safeNum(path.discretionary_impact.amount_per_month) > 0 ? (
         <div className="text-sm text-muted-foreground">
-          Discretionary spending: {formatINR(Math.abs(path.discretionary_impact.amount_per_month))} less per month
+          Discretionary spending: {formatINR(safeNum(path.discretionary_impact.amount_per_month))} less per month
           {path.discretionary_impact.months > 1 ? ` for ${path.discretionary_impact.months} months` : null}
         </div>
       ) : null}
 
       <div className="pt-2">
         <Button onClick={onChoose} disabled={disabled} className="w-full sm:w-auto">
-          {saving ? "Saving…" : "Choose this path"}
+          {saving ? "Applying…" : "Choose this path"}
         </Button>
       </div>
     </div>
