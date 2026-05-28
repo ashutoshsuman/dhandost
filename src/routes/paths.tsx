@@ -235,7 +235,7 @@ function PathsPage() {
 
       <div className="space-y-4">
         {data.paths.map((p, i) => (
-        {data.paths.map((p, i) => (
+
           <PathCard
             key={i}
             path={p}
