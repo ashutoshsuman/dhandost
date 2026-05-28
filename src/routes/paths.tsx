@@ -157,7 +157,8 @@ function PathsPage() {
     if (!d) navigate({ to: "/transactions" });
     else setData(d);
   }, [navigate]);
-  const choose = async (path: PathOption | null) => {
+  const choose = async (path: PathOption | null, index = -1) => {
+
     if (saving || applied) return; // guard against double-submit
     const label = path?.label ?? null;
     setSaving(label ?? "__none__");
@@ -177,8 +178,11 @@ function PathsPage() {
         await applyPath({
           path_selection_id: data.path_selection_id,
           chosen_path_label: path.label,
+          chosen_index: index,
+          priority_value: path.priority_value ?? null,
           access_token: accessToken,
         });
+
         // Hide "Help me with a plan" for this transaction going forward.
         if (data.trigger_transaction_id) {
           markPlanAppliedForTx(data.trigger_transaction_id);
@@ -242,7 +246,8 @@ function PathsPage() {
             saving={saving === p.label}
             disabled={saving !== null || applied}
             applied={applied}
-            onChoose={() => choose(p)}
+            onChoose={() => choose(p, i)}
+
           />
         ))}
 
