@@ -87,11 +87,14 @@ export async function fetchThreePaths(input: {
 
 /**
  * Apply the chosen path via the apply-path Edge Function.
- * Sends exactly the shape the function expects: { path_selection_id, chosen_path_label }.
+ * The function matches paths by `chosen_index` or `priority_value`, so we send
+ * both (plus the label for logging/compat).
  */
 export async function applyPath(input: {
   path_selection_id: string;
   chosen_path_label: string;
+  chosen_index: number;
+  priority_value?: string | null;
   access_token?: string | null;
 }): Promise<unknown> {
   const token = input.access_token || PUBLISHABLE_KEY;
@@ -105,7 +108,11 @@ export async function applyPath(input: {
     body: JSON.stringify({
       path_selection_id: input.path_selection_id,
       chosen_path_label: input.chosen_path_label,
+      chosen_index: input.chosen_index,
+      ...(input.priority_value ? { priority_value: input.priority_value } : {}),
     }),
+  });
+
   });
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;
