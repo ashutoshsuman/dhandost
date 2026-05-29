@@ -343,7 +343,7 @@ function PathCard({
 
       {path.discretionary_impact !== 0 && (
         <p className="text-sm text-muted-foreground">
-          Discretionary spending: ₹{Math.abs(path.discretionary_impact).toLocaleString("en-IN")} less per month
+          Discretionary spending: ₹{Math.abs(path.discretionary_impact ?? 0).toLocaleString("en-IN")} less per month
         </p>
       )}
 
