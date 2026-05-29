@@ -341,14 +341,11 @@ function PathCard({
         </div>
       )}
 
-      {path.discretionary_impact &&
-        Number.isFinite(path.discretionary_impact.amount_per_month) &&
-        path.discretionary_impact.amount_per_month !== 0 && (
-          <p className="text-sm text-muted-foreground">
-            Discretionary spending: {formatINR(Math.abs(path.discretionary_impact.amount_per_month))} less per month
-            {path.discretionary_impact.months > 1 ? ` for ${path.discretionary_impact.months} months` : null}
-          </p>
-        )}
+      {path.discretionary_impact !== 0 && (
+        <p className="text-sm text-muted-foreground">
+          Discretionary spending: ₹{Math.abs(path.discretionary_impact ?? 0).toLocaleString("en-IN")} less per month
+        </p>
+      )}
 
       <div className="pt-2">
         <Button onClick={onChoose} disabled={disabled} className="w-full sm:w-auto">

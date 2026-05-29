@@ -19,10 +19,7 @@ export type GoalImpact = {
   new_status: "on_track" | "at_risk" | "behind" | string;
 };
 
-export type DiscretionaryImpact = {
-  amount_per_month: number;
-  months: number;
-} | null;
+export type DiscretionaryImpact = number | null;
 
 export type PathOption = {
   label: string;
