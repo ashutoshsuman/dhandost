@@ -95,6 +95,30 @@ function GoalsPage() {
   );
 }
 
+function UpdateProgress({ currentAmount, isPending, onUpdate }: { currentAmount: number; isPending: boolean; onUpdate: (v: number) => void }) {
+  const [val, setVal] = useState(String(currentAmount));
+  const parsed = parseFloat(val);
+  const changed = !isNaN(parsed) && parsed !== currentAmount;
+  return (
+    <div className="mt-4 flex items-center gap-2">
+      <Input
+        type="number"
+        step="0.01"
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        className="flex-1"
+      />
+      <Button
+        type="button"
+        onClick={() => onUpdate(parsed)}
+        disabled={!changed || isPending}
+      >
+        {isPending ? "Updating…" : "Update progress"}
+      </Button>
+    </div>
+  );
+}
+
 function AddForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
