@@ -55,7 +55,10 @@ function FixedPage() {
       const { error } = await supabase.from("fixed_expenses").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fixed_expenses"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      setConfirmDelete(null);
+    },
   });
 
   const total = (data ?? []).filter((f) => f.active).reduce((s, f) => s + Number(f.amount), 0);
