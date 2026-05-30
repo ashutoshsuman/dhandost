@@ -173,7 +173,7 @@ function LivePlan() {
         </p>
       )}
 
-      {/* Goals */}
+      {/* Active Goals */}
       {data.goals && data.goals.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
@@ -182,6 +182,23 @@ function LivePlan() {
           <div className="space-y-3">
             {data.goals.map((g) => (
               <GoalCard key={g.id} goal={g} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Completed Goals */}
+      {completedGoals && completedGoals.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              Completed
+            </h2>
+            <PartyPopper className="h-3.5 w-3.5 text-green-600" />
+          </div>
+          <div className="space-y-3">
+            {completedGoals.map((g) => (
+              <CompletedGoalCard key={g.id} goal={g} />
             ))}
           </div>
         </section>
