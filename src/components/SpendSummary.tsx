@@ -155,7 +155,7 @@ export default function SpendSummary({
         <div className="flex gap-1 bg-secondary rounded-lg p-0.5">
           <button
             onClick={() => setView("breakdown")}
-            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
               view === "breakdown"
                 ? "bg-card text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -165,7 +165,7 @@ export default function SpendSummary({
           </button>
           <button
             onClick={() => setView("compare")}
-            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
               view === "compare"
                 ? "bg-card text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
