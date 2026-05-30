@@ -233,7 +233,7 @@ export function CategoryEditor({
 
 export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
   const [rows, setRows] = useState<Txn[]>([]);
-  const [, setCats] = useState<string[]>([]);
+  const [cats, setCats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
 
