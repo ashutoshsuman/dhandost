@@ -300,7 +300,13 @@ export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate">{descOf(row)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {new Date(row.occurred_at).toLocaleDateString("en-IN")} · {formatINR(row.amount, currency)}
+                  {new Date(row.occurred_at).toLocaleDateString("en-IN")}
+                  <span
+                    className={`ml-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider ${row.direction === "credit" ? "text-credit bg-credit/10" : "text-debit bg-debit/10"}`}
+                  >
+                    {row.direction === "credit" ? "CR" : "DR"}
+                  </span>
+                  <span className="ml-1.5">{formatINR(row.amount, currency)}</span>
                   {row.category_source === "ai" && row.category && (
                     <span className="text-[#8b7fd6]"> · AI guessed "{row.category}"</span>
                   )}
