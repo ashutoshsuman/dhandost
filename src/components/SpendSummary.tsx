@@ -17,7 +17,7 @@ const PALETTE = [
 
 const UNCATEGORIZED = "Uncategorized";
 
-type Txn = { amount: number | string; category: string | null; occurred_at: string };
+type Txn = { amount: number | string; category: string | null; occurred_at: string; direction?: "credit" | "debit" };
 
 function formatINR(n: number, currency = "₹") {
   return `${currency}${Math.round(Math.abs(n)).toLocaleString("en-IN")}`;
@@ -77,6 +77,7 @@ export default function SpendSummary({
 
     for (const t of transactions) {
       if (!t || t.amount == null || !t.occurred_at) continue;
+      if (t.direction && t.direction !== "debit") continue;
       const amt = Math.abs(Number(t.amount) || 0);
       if (amt === 0) continue;
       const cat = (t.category && String(t.category).trim()) || UNCATEGORIZED;
