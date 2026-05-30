@@ -58,6 +58,19 @@ function LivePlan() {
     },
   });
 
+  const { data: completedGoals } = useQuery({
+    queryKey: ["completed-goals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("status", "completed")
+        .order("target_date", { ascending: false });
+      if (error) throw error;
+      return data as Goal[];
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
