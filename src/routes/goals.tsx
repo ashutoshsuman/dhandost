@@ -79,19 +79,11 @@ function GoalsPage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1.5">{pct.toFixed(1)}% complete</p>
               </div>
-              <div className="mt-4 flex items-center gap-2">
-                <Input
-                  type="number"
-                  step="0.01"
-                  defaultValue={cur}
-                  onBlur={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (!isNaN(v) && v !== cur) update.mutate({ id: g.id, current_amount: v });
-                  }}
-                  className="flex-1"
-                />
-                <span className="text-xs text-muted-foreground">Update progress</span>
-              </div>
+              <UpdateProgress
+                currentAmount={cur}
+                isPending={update.isPending && update.variables?.id === g.id}
+                onUpdate={(v) => update.mutate({ id: g.id, current_amount: v })}
+              />
             </div>
           );
         })}
@@ -99,6 +91,30 @@ function GoalsPage() {
           <p className="text-sm text-muted-foreground">No goals yet.</p>
         )}
       </div>
+    </div>
+  );
+}
+
+function UpdateProgress({ currentAmount, isPending, onUpdate }: { currentAmount: number; isPending: boolean; onUpdate: (v: number) => void }) {
+  const [val, setVal] = useState(String(currentAmount));
+  const parsed = parseFloat(val);
+  const changed = !isNaN(parsed) && parsed !== currentAmount;
+  return (
+    <div className="mt-4 flex items-center gap-2">
+      <Input
+        type="number"
+        step="0.01"
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        className="flex-1"
+      />
+      <Button
+        type="button"
+        onClick={() => onUpdate(parsed)}
+        disabled={!changed || isPending}
+      >
+        {isPending ? "Updating…" : "Update progress"}
+      </Button>
     </div>
   );
 }
