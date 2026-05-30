@@ -147,7 +147,7 @@ function TransactionsPage() {
                     </button>
                   )}
 
-                  <Button variant="destructive" onClick={() => del.mutate(t.id)}>Delete</Button>
+                  <Button variant="destructive" onClick={() => setConfirmDelete(t)}>Delete</Button>
                 </td>
 
               </tr>
