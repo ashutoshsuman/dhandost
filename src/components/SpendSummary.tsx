@@ -201,6 +201,7 @@ export default function SpendSummary({
                   ))}
                 </Pie>
                 <Tooltip
+                  wrapperStyle={{ zIndex: 50 }}
                   formatter={(value: number, name: string) => [formatINR(value, currency), name]}
                 />
               </PieChart>
