@@ -223,50 +223,7 @@ function PlanModal({
 }
 
 
-function CategoryEditor({
-  value, categories, onSave, onCancel,
-}: {
-  value: string | null;
-  categories: string[];
-  onSave: (v: string | null) => void;
-  onCancel: () => void;
-}) {
-  const [mode, setMode] = useState<"select" | "custom">("select");
-  const [val, setVal] = useState(value ?? "");
 
-  return (
-    <div className="flex items-center gap-1.5">
-      {mode === "select" ? (
-        <Select
-          value={categories.includes(val) ? val : ""}
-          onChange={(e) => {
-            if (e.target.value === "__custom__") { setMode("custom"); setVal(""); }
-            else setVal(e.target.value);
-          }}
-          className="py-1 text-xs"
-        >
-          <option value="">—</option>
-          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-          <option value="__custom__">+ Add custom</option>
-        </Select>
-      ) : (
-        <Input
-          autoFocus
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          placeholder="Custom category"
-          className="py-1 text-xs"
-        />
-      )}
-      <button onClick={() => onSave(val || null)} className="p-1 rounded hover:bg-secondary" title="Save">
-        <Check className="h-3.5 w-3.5" />
-      </button>
-      <button onClick={onCancel} className="p-1 rounded hover:bg-secondary" title="Cancel">
-        <X className="h-3.5 w-3.5" />
-      </button>
-    </div>
-  );
-}
 
 function AddForm({ onClose, categories }: { onClose: () => void; categories: string[] }) {
   const qc = useQueryClient();
