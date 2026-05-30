@@ -30,7 +30,7 @@ function GoalsPage() {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Goal | null>(null);
 
-  const { data } = useQuery({
+  const { data, refetch } = useQuery({
     queryKey: ["goals"],
     queryFn: async () => {
       const { data, error } = await supabase.from("goals").select("*").order("priority", { ascending: true });
@@ -47,7 +47,10 @@ function GoalsPage() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["goals"] });
+      await refetch();
+    },
     onError: (err) => {
       alert(`Failed to update progress: ${(err as Error).message}`);
     },
@@ -88,11 +91,19 @@ function GoalsPage() {
           const cur = Number(g.current_amount ?? 0);
           const tgt = Number(g.target_amount);
           const pct = Math.min(100, (cur / tgt) * 100);
+          const isCompleted = g.status === "completed";
           return (
-            <div key={g.id} className="rounded-lg border border-border bg-card p-5">
+            <div key={g.id} className={`rounded-lg border border-border bg-card p-5 ${isCompleted ? "ring-1 ring-green-500/30" : ""}`}>
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold">{g.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">{g.name}</h3>
+                    {isCompleted && (
+                      <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                        ✓ Complete
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-0.5">by {formatDate(g.target_date)}</p>
                 </div>
                 <Button variant="destructive" onClick={() => setConfirmDelete(g)}>Delete</Button>
@@ -103,9 +114,9 @@ function GoalsPage() {
                   <span className="text-muted-foreground">of {formatINR(tgt)}</span>
                 </div>
                 <div className="mt-1.5 h-2 bg-secondary rounded-full overflow-hidden">
-                  <div className="h-full bg-foreground/70" style={{ width: `${pct}%` }} />
+                  <div className={`h-full ${isCompleted ? "bg-green-500" : "bg-foreground/70"}`} style={{ width: `${pct}%` }} />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5">{pct.toFixed(1)}% complete</p>
+                <p className="text-xs text-muted-foreground mt-1.5">{isCompleted ? "Completed" : `${pct.toFixed(1)}% complete`}</p>
               </div>
               <UpdateProgress
                 key={`${g.id}-${cur}`}
