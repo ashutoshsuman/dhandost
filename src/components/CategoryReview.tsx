@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
+import { DEFAULT_CATEGORIES } from "@/lib/categories";
 
 type Txn = {
   id: string;
