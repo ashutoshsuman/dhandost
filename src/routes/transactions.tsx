@@ -130,13 +130,6 @@ function TransactionsPage() {
                 <td className="px-4 py-2.5 max-w-xs truncate">{t.description || "—"}</td>
                 <td className="px-4 py-2.5 text-xs text-muted-foreground capitalize">{t.source}</td>
                 <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                  <button
-                    onClick={() => setEditingId(t.id)}
-                    className="inline-flex items-center justify-center p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"
-                    title="Edit"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
                   {appliedTxIds.includes(t.id) ? (
                     <span className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground">
                       <Check className="h-3 w-3" />
