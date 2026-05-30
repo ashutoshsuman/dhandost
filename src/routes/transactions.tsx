@@ -56,16 +56,6 @@ function TransactionsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["transactions"] }),
   });
 
-  const updateCategory = useMutation({
-    mutationFn: async ({ id, category }: { id: string; category: string | null }) => {
-      const { error } = await supabase.from("transactions").update({ category }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["transactions"] });
-      setEditingId(null);
-    },
-  });
 
   // dynamic categories: defaults + any in-use custom ones
   const dynamicCats = Array.from(
