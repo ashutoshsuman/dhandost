@@ -100,7 +100,7 @@ function FixedPage() {
                   <Button variant="ghost" onClick={() => toggle.mutate(f)}>
                     {f.active ? "Pause" : "Resume"}
                   </Button>
-                  <Button variant="destructive" onClick={() => del.mutate(f.id)}>Delete</Button>
+                  <Button variant="destructive" onClick={() => setConfirmDelete(f)}>Delete</Button>
                 </td>
               </tr>
             ))}
