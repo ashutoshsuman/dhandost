@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
+import { DEFAULT_CATEGORIES } from "@/lib/categories";
 
 type Txn = {
   id: string;
@@ -22,7 +23,7 @@ function formatINR(n: number | string, currency = "₹") {
 }
 
 async function fetchCategories(): Promise<string[]> {
-  const set = new Set<string>();
+  const set = new Set<string>(DEFAULT_CATEGORIES);
   const { data: tx } = await supabase
     .from("transactions")
     .select("category")
@@ -232,7 +233,7 @@ export function CategoryEditor({
 
 export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
   const [rows, setRows] = useState<Txn[]>([]);
-  const [, setCats] = useState<string[]>([]);
+  const [cats, setCats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
 
@@ -316,6 +317,7 @@ export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <CategoryEditor
                   transaction={row}
+                  categories={cats}
                   onSaved={(id) => markConfirmed(id)}
                 />
                 {row.category_source === "ai" && row.category && (
