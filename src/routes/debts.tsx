@@ -46,7 +46,7 @@ function DebtsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["debts"] }),
   });
 
-  const total = (data ?? []).reduce((s, d) => s + Number(d.current_balance), 0);
+  const total = (data ?? []).reduce((s, d) => s + Number(d.balance), 0);
 
   return (
     <div className="space-y-6">
@@ -80,7 +80,7 @@ function DebtsPage() {
             {(data ?? []).map((d) => (
               <tr key={d.id}>
                 <td className="px-4 py-2.5">{d.name}</td>
-                <td className="px-4 py-2.5 text-right tabular-nums font-medium">{formatINR(d.current_balance)}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-medium">{formatINR(d.balance)}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{Number(d.interest_rate).toFixed(2)}%</td>
                 <td className="px-4 py-2.5 text-right">
                   <Button variant="destructive" onClick={() => del.mutate(d.id)}>Delete</Button>
@@ -96,12 +96,12 @@ function DebtsPage() {
 
 function AddForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ name: "", current_balance: "", interest_rate: "" });
+  const [form, setForm] = useState({ name: "", balance: "", interest_rate: "" });
   const add = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("debts").insert({
         name: form.name,
-        current_balance: parseFloat(form.current_balance),
+        balance: parseFloat(form.balance),
         interest_rate: parseFloat(form.interest_rate),
         active: true,
       });
@@ -117,7 +117,7 @@ function AddForm({ onClose }: { onClose: () => void }) {
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Field label="Name"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="HDFC Credit Card" required /></Field>
-        <Field label="Current balance (₹)"><Input type="number" step="0.01" min="0" value={form.current_balance} onChange={(e) => setForm({ ...form, current_balance: e.target.value })} required /></Field>
+        <Field label="Current balance (₹)"><Input type="number" step="0.01" min="0" value={form.balance} onChange={(e) => setForm({ ...form, balance: e.target.value })} required /></Field>
         <Field label="Interest rate (% p.a.)"><Input type="number" step="0.01" min="0" value={form.interest_rate} onChange={(e) => setForm({ ...form, interest_rate: e.target.value })} required /></Field>
       </div>
       {add.isError && <p className="text-sm text-destructive">{(add.error as Error).message}</p>}
