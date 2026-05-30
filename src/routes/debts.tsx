@@ -18,7 +18,7 @@ type Debt = {
   id: string;
   name: string;
   balance: number;
-  interest_rate: number;
+  interest_rate_annual: number;
   active?: boolean | null;
 };
 
