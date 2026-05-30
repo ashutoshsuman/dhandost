@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import MoveMoney from "@/components/MoveMoney";
 
 export const Route = createFileRoute("/goals")({
   component: () => (
