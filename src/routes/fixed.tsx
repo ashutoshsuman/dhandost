@@ -28,6 +28,7 @@ export const Route = createFileRoute("/fixed")({
 function FixedPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<FixedExpense | null>(null);
 
   const { data } = useQuery({
     queryKey: ["fixed_expenses"],
