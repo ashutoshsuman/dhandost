@@ -107,6 +107,35 @@ function FixedPage() {
           </tbody>
         </table>
       </div>
+
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => { if (!o && !del.isPending) setConfirmDelete(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this fixed expense?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this fixed expense
+              {confirmDelete?.name ? ` "${confirmDelete.name}"` : ""}
+              {confirmDelete ? ` of ${formatINR(confirmDelete.amount)}` : ""}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={del.isPending} className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={del.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmDelete) del.mutate(confirmDelete.id);
+              }}
+              className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {del.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
