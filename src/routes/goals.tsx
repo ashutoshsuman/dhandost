@@ -47,7 +47,10 @@ function GoalsPage() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["goals"] });
+      await refetch();
+    },
     onError: (err) => {
       alert(`Failed to update progress: ${(err as Error).message}`);
     },
