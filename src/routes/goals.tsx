@@ -48,7 +48,7 @@ function GoalsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Goals</h1>
-          <p className="text-sm text-muted-foreground mt-1">Keep this list short — 3 or 4 things that matter.</p>
+          <p className="text-sm text-muted-foreground mt-1">Track things that matter the most.</p>
         </div>
         <Button onClick={() => setOpen(true)}>Add goal</Button>
       </div>
