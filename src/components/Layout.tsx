@@ -35,7 +35,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             <img
               src={logo}
               alt="DhanDost"
-              className="h-[76px] w-[76px] rounded-2xl object-contain"
+              className="h-[100px] w-[100px] rounded-2xl object-contain"
             />
           </Link>
           <nav className="flex gap-1 text-sm flex-wrap">
