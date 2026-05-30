@@ -317,6 +317,7 @@ export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <CategoryEditor
                   transaction={row}
+                  categories={cats}
                   onSaved={(id) => markConfirmed(id)}
                 />
                 {row.category_source === "ai" && row.category && (
