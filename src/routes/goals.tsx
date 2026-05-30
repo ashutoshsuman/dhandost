@@ -71,7 +71,14 @@ function GoalsPage() {
           <h1 className="text-2xl font-semibold">Goals</h1>
           <p className="text-sm text-muted-foreground mt-1">Track things that matter the most.</p>
         </div>
-        <Button onClick={() => setOpen(true)}>Add goal</Button>
+        <div className="flex items-center gap-2">
+          <MoveMoney
+            goals={data ?? []}
+            onMoved={() => qc.invalidateQueries({ queryKey: ["goals"] })}
+            currency="₹"
+          />
+          <Button onClick={() => setOpen(true)}>Add goal</Button>
+        </div>
       </div>
 
       {open && <AddForm onClose={() => setOpen(false)} />}
