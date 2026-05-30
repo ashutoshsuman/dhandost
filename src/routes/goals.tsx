@@ -27,6 +27,7 @@ export const Route = createFileRoute("/goals")({
 function GoalsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Goal | null>(null);
 
   const { data } = useQuery({
     queryKey: ["goals"],
@@ -50,7 +51,10 @@ function GoalsPage() {
       const { error } = await supabase.from("goals").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["goals"] });
+      setConfirmDelete(null);
+    },
   });
 
   return (
