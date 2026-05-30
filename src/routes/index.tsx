@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, Info, RefreshCw, ChevronDown } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
+import SpendSummary from "@/components/SpendSummary";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -89,6 +90,7 @@ function LivePlan() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-10 pb-8">
+      <SpendSummary />
       {/* Hero */}
       <Expandable
         summary={

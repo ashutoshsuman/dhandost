@@ -2,13 +2,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
-import { Pencil, Check, X, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { supabase, type Transaction } from "@/lib/supabase";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { fetchThreePaths, storePathsResponse, getAppliedPlanTxIds } from "@/lib/three-paths";
+import { CategoryEditor as ReviewCategoryEditor } from "@/components/CategoryReview";
 
 
 export const Route = createFileRoute("/transactions")({
@@ -23,7 +24,7 @@ function TransactionsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  // editingId/updateCategory removed — inline ReviewCategoryEditor handles category edits now
   const [planFor, setPlanFor] = useState<Transaction | null>(null);
   const [computing, setComputing] = useState(false);
   const [appliedTxIds, setAppliedTxIds] = useState<string[]>([]);
@@ -55,16 +56,6 @@ function TransactionsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["transactions"] }),
   });
 
-  const updateCategory = useMutation({
-    mutationFn: async ({ id, category }: { id: string; category: string | null }) => {
-      const { error } = await supabase.from("transactions").update({ category }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["transactions"] });
-      setEditingId(null);
-    },
-  });
 
   // dynamic categories: defaults + any in-use custom ones
   const dynamicCats = Array.from(
@@ -120,33 +111,15 @@ function TransactionsPage() {
                   {t.direction === "credit" ? "+" : "−"}{formatINR(t.amount)}
                 </td>
                 <td className="px-4 py-2.5">
-                  {editingId === t.id ? (
-                    <CategoryEditor
-                      value={t.category}
-                      categories={dynamicCats}
-                      onSave={(v) => updateCategory.mutate({ id: t.id, category: v })}
-                      onCancel={() => setEditingId(null)}
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setEditingId(t.id)}
-                      className="text-left text-muted-foreground hover:text-foreground hover:underline"
-                      title="Edit category"
-                    >
-                      {t.category || <span className="italic">add category</span>}
-                    </button>
-                  )}
+                  <ReviewCategoryEditor
+                    transaction={t as any}
+                    categories={dynamicCats}
+                    onSaved={() => qc.invalidateQueries({ queryKey: ["transactions"] })}
+                  />
                 </td>
                 <td className="px-4 py-2.5 max-w-xs truncate">{t.description || "—"}</td>
                 <td className="px-4 py-2.5 text-xs text-muted-foreground capitalize">{t.source}</td>
                 <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                  <button
-                    onClick={() => setEditingId(t.id)}
-                    className="inline-flex items-center justify-center p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"
-                    title="Edit"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
                   {appliedTxIds.includes(t.id) ? (
                     <span className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground">
                       <Check className="h-3 w-3" />
@@ -250,50 +223,7 @@ function PlanModal({
 }
 
 
-function CategoryEditor({
-  value, categories, onSave, onCancel,
-}: {
-  value: string | null;
-  categories: string[];
-  onSave: (v: string | null) => void;
-  onCancel: () => void;
-}) {
-  const [mode, setMode] = useState<"select" | "custom">("select");
-  const [val, setVal] = useState(value ?? "");
 
-  return (
-    <div className="flex items-center gap-1.5">
-      {mode === "select" ? (
-        <Select
-          value={categories.includes(val) ? val : ""}
-          onChange={(e) => {
-            if (e.target.value === "__custom__") { setMode("custom"); setVal(""); }
-            else setVal(e.target.value);
-          }}
-          className="py-1 text-xs"
-        >
-          <option value="">—</option>
-          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-          <option value="__custom__">+ Add custom</option>
-        </Select>
-      ) : (
-        <Input
-          autoFocus
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          placeholder="Custom category"
-          className="py-1 text-xs"
-        />
-      )}
-      <button onClick={() => onSave(val || null)} className="p-1 rounded hover:bg-secondary" title="Save">
-        <Check className="h-3.5 w-3.5" />
-      </button>
-      <button onClick={onCancel} className="p-1 rounded hover:bg-secondary" title="Cancel">
-        <X className="h-3.5 w-3.5" />
-      </button>
-    </div>
-  );
-}
 
 function AddForm({ onClose, categories }: { onClose: () => void; categories: string[] }) {
   const qc = useQueryClient();

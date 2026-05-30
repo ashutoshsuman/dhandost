@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TransactionsRouteImport } from './routes/transactions'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as PathsRouteImport } from './routes/paths'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as GoalsRouteImport } from './routes/goals'
@@ -21,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const TransactionsRoute = TransactionsRouteImport.update({
   id: '/transactions',
   path: '/transactions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PathsRoute = PathsRouteImport.update({
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/import': typeof ImportRoute
   '/paths': typeof PathsRoute
+  '/review': typeof ReviewRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/import': typeof ImportRoute
   '/paths': typeof PathsRoute
+  '/review': typeof ReviewRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/import': typeof ImportRoute
   '/paths': typeof PathsRoute
+  '/review': typeof ReviewRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/import'
     | '/paths'
+    | '/review'
     | '/transactions'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/import'
     | '/paths'
+    | '/review'
     | '/transactions'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/import'
     | '/paths'
+    | '/review'
     | '/transactions'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   GoalsRoute: typeof GoalsRoute
   ImportRoute: typeof ImportRoute
   PathsRoute: typeof PathsRoute
+  ReviewRoute: typeof ReviewRoute
   TransactionsRoute: typeof TransactionsRoute
 }
 
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/transactions'
       fullPath: '/transactions'
       preLoaderRoute: typeof TransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/paths': {
@@ -203,18 +223,9 @@ const rootRouteChildren: RootRouteChildren = {
   GoalsRoute: GoalsRoute,
   ImportRoute: ImportRoute,
   PathsRoute: PathsRoute,
+  ReviewRoute: ReviewRoute,
   TransactionsRoute: TransactionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
