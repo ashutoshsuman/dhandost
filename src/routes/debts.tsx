@@ -18,7 +18,7 @@ type Debt = {
   id: string;
   name: string;
   balance: number;
-  interest_rate: number;
+  interest_rate_annual: number;
   active?: boolean | null;
 };
 
@@ -32,7 +32,7 @@ function DebtsPage() {
       const { data, error } = await supabase
         .from("debts")
         .select("*")
-        .order("interest_rate", { ascending: false });
+        .order("interest_rate_annual", { ascending: false });
       if (error) throw error;
       return (data ?? []).filter((d: Debt) => d.active !== false) as Debt[];
     },
@@ -81,7 +81,7 @@ function DebtsPage() {
               <tr key={d.id}>
                 <td className="px-4 py-2.5">{d.name}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums font-medium">{formatINR(d.balance)}</td>
-                <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{Number(d.interest_rate).toFixed(2)}%</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{Number(d.interest_rate_annual).toFixed(2)}%</td>
                 <td className="px-4 py-2.5 text-right">
                   <Button variant="destructive" onClick={() => del.mutate(d.id)}>Delete</Button>
                 </td>
@@ -96,13 +96,13 @@ function DebtsPage() {
 
 function AddForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ name: "", balance: "", interest_rate: "" });
+  const [form, setForm] = useState({ name: "", balance: "", interest_rate_annual: "" });
   const add = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("debts").insert({
         name: form.name,
         balance: parseFloat(form.balance),
-        interest_rate: parseFloat(form.interest_rate),
+        interest_rate_annual: parseFloat(form.interest_rate_annual),
         active: true,
       });
       if (error) throw error;
@@ -118,7 +118,7 @@ function AddForm({ onClose }: { onClose: () => void }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Field label="Name"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="HDFC Credit Card" required /></Field>
         <Field label="Current balance (₹)"><Input type="number" step="0.01" min="0" value={form.balance} onChange={(e) => setForm({ ...form, balance: e.target.value })} required /></Field>
-        <Field label="Interest rate (% p.a.)"><Input type="number" step="0.01" min="0" value={form.interest_rate} onChange={(e) => setForm({ ...form, interest_rate: e.target.value })} required /></Field>
+        <Field label="Interest rate (% p.a.)"><Input type="number" step="0.01" min="0" value={form.interest_rate_annual} onChange={(e) => setForm({ ...form, interest_rate_annual: e.target.value })} required /></Field>
       </div>
       {add.isError && <p className="text-sm text-destructive">{(add.error as Error).message}</p>}
       <div className="flex gap-2 justify-end">
