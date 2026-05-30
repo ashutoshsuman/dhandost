@@ -3,7 +3,7 @@ import { parseFile } from "@/lib/parse-statement";
 import { useMemo, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
-import { supabase } from "@/lib/supabase";
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { formatINR } from "@/lib/format";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
