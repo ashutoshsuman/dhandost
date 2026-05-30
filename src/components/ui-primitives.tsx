@@ -37,7 +37,7 @@ export const Button = React.forwardRef<
   return (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none ${styles} ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none ${styles} ${className}`}
       {...props}
     />
   );
