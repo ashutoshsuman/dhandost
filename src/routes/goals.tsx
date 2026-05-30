@@ -81,7 +81,7 @@ function GoalsPage() {
                   <h3 className="font-semibold">{g.name}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">by {formatDate(g.target_date)}</p>
                 </div>
-                <Button variant="destructive" onClick={() => del.mutate(g.id)}>Delete</Button>
+                <Button variant="destructive" onClick={() => setConfirmDelete(g)}>Delete</Button>
               </div>
               <div className="mt-4">
                 <div className="flex justify-between text-sm tabular-nums">
@@ -105,6 +105,36 @@ function GoalsPage() {
           <p className="text-sm text-muted-foreground">No goals yet.</p>
         )}
       </div>
+
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => { if (!o && !del.isPending) setConfirmDelete(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this goal?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this goal
+              {confirmDelete?.name ? ` "${confirmDelete.name}"` : ""}
+              {confirmDelete ? ` with target amount ${formatINR(confirmDelete.target_amount)}` : ""}
+              {confirmDelete?.target_date ? ` and target date ${formatDate(confirmDelete.target_date)}` : ""}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={del.isPending} className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={del.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmDelete) del.mutate(confirmDelete.id);
+              }}
+              className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {del.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
