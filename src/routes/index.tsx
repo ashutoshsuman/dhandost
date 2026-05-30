@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, Info, RefreshCw, ChevronDown } from "lucide-react";
+import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
+import { supabase, type Goal } from "@/lib/supabase";
 import SpendSummary from "@/components/SpendSummary";
 
 export const Route = createFileRoute("/")({
@@ -54,6 +55,19 @@ function LivePlan() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return (await res.json()) as PlanResponse;
+    },
+  });
+
+  const { data: completedGoals } = useQuery({
+    queryKey: ["completed-goals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("status", "completed")
+        .order("target_date", { ascending: false });
+      if (error) throw error;
+      return data as Goal[];
     },
   });
 
@@ -159,7 +173,7 @@ function LivePlan() {
         </p>
       )}
 
-      {/* Goals */}
+      {/* Active Goals */}
       {data.goals && data.goals.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
@@ -168,6 +182,23 @@ function LivePlan() {
           <div className="space-y-3">
             {data.goals.map((g) => (
               <GoalCard key={g.id} goal={g} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Completed Goals */}
+      {completedGoals && completedGoals.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              Completed
+            </h2>
+            <PartyPopper className="h-3.5 w-3.5 text-green-600" />
+          </div>
+          <div className="space-y-3">
+            {completedGoals.map((g) => (
+              <CompletedGoalCard key={g.id} goal={g} />
             ))}
           </div>
         </section>
@@ -342,6 +373,45 @@ function GoalCard({ goal }: { goal: PlanGoal }) {
           whether your current pace meets that schedule.
         </div>
       )}
+    </div>
+  );
+}
+
+function CompletedGoalCard({ goal }: { goal: Goal }) {
+  return (
+    <div className="rounded-xl border border-green-200/60 bg-green-50/40 p-4 ring-1 ring-green-500/20">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-medium truncate text-green-800">{goal.name}</p>
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700 whitespace-nowrap">
+              <CheckCircle2 className="h-3 w-3" />
+              Completed
+            </span>
+          </div>
+          <p className="text-xs text-green-600/80 mt-0.5">
+            Target achieved by {formatDate(goal.target_date)}
+          </p>
+        </div>
+        <PartyPopper className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+      </div>
+
+      <div className="mt-3">
+        <div className="flex items-center justify-between text-xs text-green-700/80 tabular-nums mb-1.5">
+          <span>
+            {formatINR(goal.current_amount ?? 0)} /{" "}
+            {formatINR(goal.target_amount)}
+          </span>
+          <span>100%</span>
+        </div>
+        <div className="h-1.5 bg-green-200/40 rounded-full overflow-hidden">
+          <div className="h-full bg-green-500 transition-all" style={{ width: "100%" }} />
+        </div>
+      </div>
+
+      <p className="mt-3 text-xs text-green-700/90 font-medium">
+        Congratulations — you crushed this goal!
+      </p>
     </div>
   );
 }
