@@ -4,6 +4,7 @@ import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 type Txn = {
   id: string;
   amount: number | string;
+  direction?: "credit" | "debit";
   category: string | null;
   category_source?: string | null;
   needs_ai_categorization?: boolean | null;
