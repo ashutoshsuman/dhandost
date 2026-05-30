@@ -205,7 +205,7 @@ export function CategoryEditor({
         value={value}
         onChange={onChange}
         disabled={saving}
-        className="text-xs px-2 py-1 rounded-md border border-border bg-background text-foreground max-w-[160px]"
+        className="text-xs px-2 py-1 rounded-md border border-border bg-background text-foreground max-w-[160px] cursor-pointer"
       >
         <option value="" disabled>
           {isUnclassified ? "Pick a category…" : "—"}
@@ -314,7 +314,7 @@ export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
                 {row.category_source === "ai" && row.category && (
                   <button
                     onClick={() => confirmAsIs(row)}
-                    className="text-xs px-3 py-1.5 rounded-md border border-primary text-primary font-medium hover:bg-primary/5"
+                    className="text-xs px-3 py-1.5 rounded-md border border-primary text-primary font-medium hover:bg-primary/5 cursor-pointer"
                   >
                     Looks right
                   </button>

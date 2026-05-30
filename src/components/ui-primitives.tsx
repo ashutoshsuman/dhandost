@@ -15,7 +15,7 @@ export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttrib
   ({ className = "", children, ...props }, ref) => (
     <select
       ref={ref}
-      className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 ${className}`}
+      className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring/40 ${className}`}
       {...props}
     >
       {children}
@@ -37,7 +37,7 @@ export const Button = React.forwardRef<
   return (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none ${styles} ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none ${styles} ${className}`}
       {...props}
     />
   );

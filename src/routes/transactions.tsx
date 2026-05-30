@@ -128,7 +128,7 @@ function TransactionsPage() {
                   ) : (
                     <button
                       onClick={() => setPlanFor(t)}
-                      className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
                       title="Help me with a plan"
                     >
                       <Sparkles className="h-3 w-3" />
@@ -211,7 +211,7 @@ function PlanModal({
               <Button variant="outline" onClick={() => onPick("planned")}>Planned</Button>
             </div>
             <div className="mt-4 text-right">
-              <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground">
+              <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground cursor-pointer">
                 Cancel
               </button>
             </div>
@@ -291,7 +291,7 @@ function AddForm({ onClose, categories }: { onClose: () => void; categories: str
                 onChange={(e) => setForm({ ...form, customCategory: e.target.value })}
                 placeholder="Custom"
               />
-              <button type="button" onClick={() => setCustomMode(false)} className="text-xs text-muted-foreground px-2">↩</button>
+              <button type="button" onClick={() => setCustomMode(false)} className="text-xs text-muted-foreground px-2 cursor-pointer">↩</button>
             </div>
           ) : (
             <Select
