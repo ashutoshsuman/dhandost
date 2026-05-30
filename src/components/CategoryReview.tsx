@@ -81,23 +81,31 @@ export function CategoryEditor({
   const [value, setValue] = useState(transaction.category ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
 
   useEffect(() => {
     if (!catsProp) fetchCategories().then(setCats).catch(() => {});
   }, [catsProp]);
 
-  async function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const next = e.target.value;
-    if (!next || next === transaction.category) {
-      setValue(next);
-      return;
-    }
-    setValue(next);
+  useEffect(() => {
+    if (catsProp) setCats(catsProp);
+  }, [catsProp]);
+
+  async function applyCategory(next: string) {
     setSaving(true);
     setSaved(false);
     try {
       const result = await saveCorrection(transaction.id, next);
+      setValue(next);
       setSaved(true);
+      if (!cats.includes(next)) {
+        setCats((prev) => {
+          const merged = [...prev, next].filter((c, i, a) => a.indexOf(c) === i);
+          merged.sort();
+          return merged;
+        });
+      }
       onSaved?.(transaction.id, next, result);
       setTimeout(() => setSaved(false), 1500);
     } catch (err) {
@@ -108,8 +116,88 @@ export function CategoryEditor({
     }
   }
 
+  async function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const next = e.target.value;
+    if (!next) {
+      setValue(next);
+      return;
+    }
+    if (next === "__new__") {
+      setCreating(true);
+      setNewName("");
+      return;
+    }
+    if (next === transaction.category) {
+      setValue(next);
+      return;
+    }
+    setValue(next);
+    await applyCategory(next);
+  }
+
+  async function confirmCreate() {
+    const name = newName.trim();
+    if (!name) {
+      setCreating(false);
+      return;
+    }
+    if (name.length > 40) {
+      alert("Category name should be 40 characters or fewer.");
+      return;
+    }
+    const existing = cats.find((c) => c.toLowerCase() === name.toLowerCase());
+    const finalName = existing ?? name;
+    setCreating(false);
+    await applyCategory(finalName);
+  }
+
+  function cancelCreate() {
+    setCreating(false);
+    setNewName("");
+  }
+
+  function onNewNameKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      confirmCreate();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      cancelCreate();
+    }
+  }
+
   const isAI = transaction.category_source === "ai";
   const isUnclassified = !transaction.category;
+
+  if (creating) {
+    return (
+      <div className="inline-flex items-center gap-1.5">
+        <input
+          autoFocus
+          type="text"
+          value={newName}
+          placeholder="New category name"
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={onNewNameKey}
+          className="text-xs px-2 py-1 rounded-md border border-primary bg-background text-foreground outline-none min-w-[140px]"
+          maxLength={40}
+        />
+        <button
+          onClick={confirmCreate}
+          disabled={!newName.trim()}
+          className="text-xs px-2.5 py-1 rounded-md border border-primary bg-primary text-primary-foreground font-medium cursor-pointer disabled:opacity-50"
+        >
+          Add
+        </button>
+        <button
+          onClick={cancelCreate}
+          className="text-xs px-2.5 py-1 rounded-md border border-border bg-background text-muted-foreground cursor-pointer"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="inline-flex items-center gap-1.5">
@@ -119,7 +207,7 @@ export function CategoryEditor({
         disabled={saving}
         className="text-xs px-2 py-1 rounded-md border border-border bg-background text-foreground max-w-[160px]"
       >
-        <option value="" disabled={!isUnclassified}>
+        <option value="" disabled>
           {isUnclassified ? "Pick a category…" : "—"}
         </option>
         {cats.map((c) => (
@@ -127,6 +215,8 @@ export function CategoryEditor({
             {c}
           </option>
         ))}
+        <option disabled>──────────</option>
+        <option value="__new__">+ Create new category…</option>
       </select>
       {isAI && !saved && (
         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded text-[#8b7fd6] bg-[#f0edfb] tracking-wider">
