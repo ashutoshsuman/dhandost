@@ -18,6 +18,7 @@ import { Route as FixedRouteImport } from './routes/fixed'
 import { Route as DebtsRouteImport } from './routes/debts'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicMoveGoalFundsRouteImport } from './routes/api/public/move-goal-funds'
 
 const TransactionsRoute = TransactionsRouteImport.update({
   id: '/transactions',
@@ -64,6 +65,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMoveGoalFundsRoute = ApiPublicMoveGoalFundsRouteImport.update({
+  id: '/api/public/move-goal-funds',
+  path: '/api/public/move-goal-funds',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/paths': typeof PathsRoute
   '/review': typeof ReviewRoute
   '/transactions': typeof TransactionsRoute
+  '/api/public/move-goal-funds': typeof ApiPublicMoveGoalFundsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/paths': typeof PathsRoute
   '/review': typeof ReviewRoute
   '/transactions': typeof TransactionsRoute
+  '/api/public/move-goal-funds': typeof ApiPublicMoveGoalFundsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/paths': typeof PathsRoute
   '/review': typeof ReviewRoute
   '/transactions': typeof TransactionsRoute
+  '/api/public/move-goal-funds': typeof ApiPublicMoveGoalFundsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/paths'
     | '/review'
     | '/transactions'
+    | '/api/public/move-goal-funds'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/paths'
     | '/review'
     | '/transactions'
+    | '/api/public/move-goal-funds'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/paths'
     | '/review'
     | '/transactions'
+    | '/api/public/move-goal-funds'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   PathsRoute: typeof PathsRoute
   ReviewRoute: typeof ReviewRoute
   TransactionsRoute: typeof TransactionsRoute
+  ApiPublicMoveGoalFundsRoute: typeof ApiPublicMoveGoalFundsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/move-goal-funds': {
+      id: '/api/public/move-goal-funds'
+      path: '/api/public/move-goal-funds'
+      fullPath: '/api/public/move-goal-funds'
+      preLoaderRoute: typeof ApiPublicMoveGoalFundsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,7 +245,18 @@ const rootRouteChildren: RootRouteChildren = {
   PathsRoute: PathsRoute,
   ReviewRoute: ReviewRoute,
   TransactionsRoute: TransactionsRoute,
+  ApiPublicMoveGoalFundsRoute: ApiPublicMoveGoalFundsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
