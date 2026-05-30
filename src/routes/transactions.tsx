@@ -10,6 +10,16 @@ import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { fetchThreePaths, storePathsResponse, getAppliedPlanTxIds } from "@/lib/three-paths";
 import { CategoryEditor as ReviewCategoryEditor } from "@/components/CategoryReview";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 export const Route = createFileRoute("/transactions")({
@@ -28,6 +38,7 @@ function TransactionsPage() {
   const [planFor, setPlanFor] = useState<Transaction | null>(null);
   const [computing, setComputing] = useState(false);
   const [appliedTxIds, setAppliedTxIds] = useState<string[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<Transaction | null>(null);
 
   useEffect(() => {
     setAppliedTxIds(getAppliedPlanTxIds());
@@ -53,7 +64,10 @@ function TransactionsPage() {
       const { error } = await supabase.from("transactions").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["transactions"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      setConfirmDelete(null);
+    },
   });
 
 
@@ -136,7 +150,7 @@ function TransactionsPage() {
                     </button>
                   )}
 
-                  <Button variant="destructive" onClick={() => del.mutate(t.id)}>Delete</Button>
+                  <Button variant="destructive" onClick={() => setConfirmDelete(t)}>Delete</Button>
                 </td>
 
               </tr>
@@ -170,6 +184,35 @@ function TransactionsPage() {
 
         />
       )}
+
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => { if (!o && !del.isPending) setConfirmDelete(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this transaction?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this transaction
+              {confirmDelete?.description ? ` "${confirmDelete.description}"` : ""}
+              {confirmDelete ? ` of ${formatINR(confirmDelete.amount)}` : ""}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={del.isPending} className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={del.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmDelete) del.mutate(confirmDelete.id);
+              }}
+              className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {del.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
