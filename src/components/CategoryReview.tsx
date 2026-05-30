@@ -241,7 +241,7 @@ export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
     const [{ data }, categories] = await Promise.all([
       supabase
         .from("transactions")
-        .select("id,amount,category,category_source,needs_ai_categorization,occurred_at,description")
+        .select("id,amount,direction,category,category_source,needs_ai_categorization,occurred_at,description")
         .or("category_source.eq.ai,needs_ai_categorization.eq.true")
         .order("occurred_at", { ascending: false })
         .limit(200),
