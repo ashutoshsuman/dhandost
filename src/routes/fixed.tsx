@@ -6,6 +6,16 @@ import { supabase, type FixedExpense } from "@/lib/supabase";
 import { formatINR } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/fixed")({
   component: () => (
@@ -18,6 +28,7 @@ export const Route = createFileRoute("/fixed")({
 function FixedPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<FixedExpense | null>(null);
 
   const { data } = useQuery({
     queryKey: ["fixed_expenses"],
@@ -44,7 +55,10 @@ function FixedPage() {
       const { error } = await supabase.from("fixed_expenses").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fixed_expenses"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      setConfirmDelete(null);
+    },
   });
 
   const total = (data ?? []).filter((f) => f.active).reduce((s, f) => s + Number(f.amount), 0);
@@ -86,13 +100,42 @@ function FixedPage() {
                   <Button variant="ghost" onClick={() => toggle.mutate(f)}>
                     {f.active ? "Pause" : "Resume"}
                   </Button>
-                  <Button variant="destructive" onClick={() => del.mutate(f.id)}>Delete</Button>
+                  <Button variant="destructive" onClick={() => setConfirmDelete(f)}>Delete</Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => { if (!o && !del.isPending) setConfirmDelete(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this fixed expense?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this fixed expense
+              {confirmDelete?.name ? ` "${confirmDelete.name}"` : ""}
+              {confirmDelete ? ` of ${formatINR(confirmDelete.amount)}` : ""}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={del.isPending} className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={del.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmDelete) del.mutate(confirmDelete.id);
+              }}
+              className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {del.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
