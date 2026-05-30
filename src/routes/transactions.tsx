@@ -38,6 +38,7 @@ function TransactionsPage() {
   const [planFor, setPlanFor] = useState<Transaction | null>(null);
   const [computing, setComputing] = useState(false);
   const [appliedTxIds, setAppliedTxIds] = useState<string[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<Transaction | null>(null);
 
   useEffect(() => {
     setAppliedTxIds(getAppliedPlanTxIds());
