@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
-import { Check, X, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { supabase, type Transaction } from "@/lib/supabase";
 import { formatINR, formatDate } from "@/lib/format";
