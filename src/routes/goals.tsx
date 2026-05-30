@@ -79,19 +79,11 @@ function GoalsPage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1.5">{pct.toFixed(1)}% complete</p>
               </div>
-              <div className="mt-4 flex items-center gap-2">
-                <Input
-                  type="number"
-                  step="0.01"
-                  defaultValue={cur}
-                  onBlur={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (!isNaN(v) && v !== cur) update.mutate({ id: g.id, current_amount: v });
-                  }}
-                  className="flex-1"
-                />
-                <span className="text-xs text-muted-foreground">Update progress</span>
-              </div>
+              <UpdateProgress
+                currentAmount={cur}
+                isPending={update.isPending && update.variables?.id === g.id}
+                onUpdate={(v) => update.mutate({ id: g.id, current_amount: v })}
+              />
             </div>
           );
         })}
