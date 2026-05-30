@@ -108,6 +108,7 @@ function GoalsPage() {
                 <p className="text-xs text-muted-foreground mt-1.5">{pct.toFixed(1)}% complete</p>
               </div>
               <UpdateProgress
+                key={`${g.id}-${cur}`}
                 currentAmount={cur}
                 isPending={update.isPending && update.variables?.id === g.id}
                 onUpdate={(v) => update.mutate({ id: g.id, current_amount: v })}
