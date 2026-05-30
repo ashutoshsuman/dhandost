@@ -4,6 +4,7 @@ import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 type Txn = {
   id: string;
   amount: number | string;
+  direction?: "credit" | "debit";
   category: string | null;
   category_source?: string | null;
   needs_ai_categorization?: boolean | null;
@@ -240,7 +241,7 @@ export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
     const [{ data }, categories] = await Promise.all([
       supabase
         .from("transactions")
-        .select("id,amount,category,category_source,needs_ai_categorization,occurred_at,description")
+        .select("id,amount,direction,category,category_source,needs_ai_categorization,occurred_at,description")
         .or("category_source.eq.ai,needs_ai_categorization.eq.true")
         .order("occurred_at", { ascending: false })
         .limit(200),
@@ -299,7 +300,13 @@ export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate">{descOf(row)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {new Date(row.occurred_at).toLocaleDateString("en-IN")} · {formatINR(row.amount, currency)}
+                  {new Date(row.occurred_at).toLocaleDateString("en-IN")}
+                  <span
+                    className={`ml-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider ${row.direction === "credit" ? "text-credit bg-credit/10" : "text-debit bg-debit/10"}`}
+                  >
+                    {row.direction === "credit" ? "CR" : "DR"}
+                  </span>
+                  <span className="ml-1.5">{formatINR(row.amount, currency)}</span>
                   {row.category_source === "ai" && row.category && (
                     <span className="text-[#8b7fd6]"> · AI guessed "{row.category}"</span>
                   )}
