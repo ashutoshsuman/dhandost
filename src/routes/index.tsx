@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, Info, RefreshCw, ChevronDown } from "lucide-react";
+import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
+import { supabase, type Goal } from "@/lib/supabase";
 import SpendSummary from "@/components/SpendSummary";
 
 export const Route = createFileRoute("/")({
