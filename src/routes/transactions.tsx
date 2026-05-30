@@ -121,22 +121,11 @@ function TransactionsPage() {
                   {t.direction === "credit" ? "+" : "−"}{formatINR(t.amount)}
                 </td>
                 <td className="px-4 py-2.5">
-                  {editingId === t.id ? (
-                    <CategoryEditor
-                      value={t.category}
-                      categories={dynamicCats}
-                      onSave={(v) => updateCategory.mutate({ id: t.id, category: v })}
-                      onCancel={() => setEditingId(null)}
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setEditingId(t.id)}
-                      className="text-left text-muted-foreground hover:text-foreground hover:underline"
-                      title="Edit category"
-                    >
-                      {t.category || <span className="italic">add category</span>}
-                    </button>
-                  )}
+                  <ReviewCategoryEditor
+                    transaction={t as any}
+                    categories={dynamicCats}
+                    onSaved={() => qc.invalidateQueries({ queryKey: ["transactions"] })}
+                  />
                 </td>
                 <td className="px-4 py-2.5 max-w-xs truncate">{t.description || "—"}</td>
                 <td className="px-4 py-2.5 text-xs text-muted-foreground capitalize">{t.source}</td>
