@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import MoveMoney from "@/components/MoveMoney";
 
 export const Route = createFileRoute("/goals")({
   component: () => (
@@ -40,10 +41,16 @@ function GoalsPage() {
 
   const update = useMutation({
     mutationFn: async ({ id, current_amount }: { id: string; current_amount: number }) => {
-      const { error } = await supabase.from("goals").update({ current_amount }).eq("id", id);
+      const { error } = await supabase
+        .from("goals")
+        .update({ current_amount })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
+    onError: (err) => {
+      alert(`Failed to update progress: ${(err as Error).message}`);
+    },
   });
 
   const del = useMutation({
@@ -64,7 +71,14 @@ function GoalsPage() {
           <h1 className="text-2xl font-semibold">Goals</h1>
           <p className="text-sm text-muted-foreground mt-1">Track things that matter the most.</p>
         </div>
-        <Button onClick={() => setOpen(true)}>Add goal</Button>
+        <div className="flex items-center gap-2">
+          <MoveMoney
+            goals={data ?? []}
+            onMoved={() => qc.invalidateQueries({ queryKey: ["goals"] })}
+            currency="₹"
+          />
+          <Button onClick={() => setOpen(true)}>Add goal</Button>
+        </div>
       </div>
 
       {open && <AddForm onClose={() => setOpen(false)} />}
@@ -94,6 +108,7 @@ function GoalsPage() {
                 <p className="text-xs text-muted-foreground mt-1.5">{pct.toFixed(1)}% complete</p>
               </div>
               <UpdateProgress
+                key={`${g.id}-${cur}`}
                 currentAmount={cur}
                 isPending={update.isPending && update.variables?.id === g.id}
                 onUpdate={(v) => update.mutate({ id: g.id, current_amount: v })}
