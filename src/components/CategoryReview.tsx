@@ -23,7 +23,7 @@ function formatINR(n: number | string, currency = "₹") {
 }
 
 async function fetchCategories(): Promise<string[]> {
-  const set = new Set<string>();
+  const set = new Set<string>(DEFAULT_CATEGORIES);
   const { data: tx } = await supabase
     .from("transactions")
     .select("category")
