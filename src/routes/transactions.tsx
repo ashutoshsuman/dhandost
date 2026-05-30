@@ -240,14 +240,17 @@ function AddForm({ onClose, categories }: { onClose: () => void; categories: str
   const add = useMutation({
     mutationFn: async () => {
       const cat = customMode ? form.customCategory.trim() : form.category;
-      const { error } = await supabase.from("transactions").insert({
+      const payload: Record<string, unknown> = {
         occurred_at: form.occurred_at,
         amount: parseFloat(parseFloat(form.amount).toFixed(2)),
         direction: form.direction,
-        category: cat || null,
         description: form.description || null,
         source: "manual",
-      });
+      };
+      // Only set category if user explicitly picked one — otherwise let the
+      // DB trigger auto-categorize based on description keywords.
+      if (cat) payload.category = cat;
+      const { error } = await supabase.from("transactions").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
