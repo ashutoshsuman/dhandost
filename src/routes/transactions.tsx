@@ -24,7 +24,7 @@ function TransactionsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  // editingId/updateCategory removed — inline ReviewCategoryEditor handles category edits now
   const [planFor, setPlanFor] = useState<Transaction | null>(null);
   const [computing, setComputing] = useState(false);
   const [appliedTxIds, setAppliedTxIds] = useState<string[]>([]);
