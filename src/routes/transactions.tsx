@@ -82,8 +82,8 @@ function TransactionsPage() {
 
       {open && <AddForm onClose={() => setOpen(false)} categories={dynamicCats} />}
 
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="rounded-lg border border-border bg-card overflow-x-auto">
+        <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="text-left px-4 py-2.5 font-medium">Date</th>
