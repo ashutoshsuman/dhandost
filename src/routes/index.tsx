@@ -377,6 +377,45 @@ function GoalCard({ goal }: { goal: PlanGoal }) {
   );
 }
 
+function CompletedGoalCard({ goal }: { goal: Goal }) {
+  return (
+    <div className="rounded-xl border border-green-200/60 bg-green-50/40 p-4 ring-1 ring-green-500/20">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-medium truncate text-green-800">{goal.name}</p>
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700 whitespace-nowrap">
+              <CheckCircle2 className="h-3 w-3" />
+              Completed
+            </span>
+          </div>
+          <p className="text-xs text-green-600/80 mt-0.5">
+            Target achieved by {formatDate(goal.target_date)}
+          </p>
+        </div>
+        <PartyPopper className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+      </div>
+
+      <div className="mt-3">
+        <div className="flex items-center justify-between text-xs text-green-700/80 tabular-nums mb-1.5">
+          <span>
+            {formatINR(goal.current_amount ?? 0)} /{" "}
+            {formatINR(goal.target_amount)}
+          </span>
+          <span>100%</span>
+        </div>
+        <div className="h-1.5 bg-green-200/40 rounded-full overflow-hidden">
+          <div className="h-full bg-green-500 transition-all" style={{ width: "100%" }} />
+        </div>
+      </div>
+
+      <p className="mt-3 text-xs text-green-700/90 font-medium">
+        Congratulations — you crushed this goal!
+      </p>
+    </div>
+  );
+}
+
 function statusLabel(s: string) {
   if (s === "at_risk") return "At risk";
   if (s === "behind") return "Behind";
