@@ -30,7 +30,7 @@ function GoalsPage() {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Goal | null>(null);
 
-  const { data } = useQuery({
+  const { data, refetch } = useQuery({
     queryKey: ["goals"],
     queryFn: async () => {
       const { data, error } = await supabase.from("goals").select("*").order("priority", { ascending: true });
