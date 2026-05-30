@@ -17,7 +17,7 @@ export const Route = createFileRoute("/debts")({
 type Debt = {
   id: string;
   name: string;
-  current_balance: number;
+  balance: number;
   interest_rate: number;
   active?: boolean | null;
 };
