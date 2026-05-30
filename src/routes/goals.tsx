@@ -41,10 +41,16 @@ function GoalsPage() {
 
   const update = useMutation({
     mutationFn: async ({ id, current_amount }: { id: string; current_amount: number }) => {
-      const { error } = await supabase.from("goals").update({ current_amount }).eq("id", id);
+      const { error } = await supabase
+        .from("goals")
+        .update({ current_amount })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
+    onError: (err) => {
+      alert(`Failed to update progress: ${(err as Error).message}`);
+    },
   });
 
   const del = useMutation({
