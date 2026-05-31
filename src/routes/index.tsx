@@ -30,12 +30,14 @@ type PlanGoal = {
 type ActiveCommitment = {
   commitment_type?: "reduce_discretionary" | "delay_goal";
   goal_name?: string;
+  goal_id?: string;
   category?: string;
   monthly_amount?: number;
   duration_months?: number;
   delay_weeks?: number;
   ends_at?: string;
 };
+
 
 type PlanResponse = {
   expected_monthly_income: number;
