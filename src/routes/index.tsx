@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper, Lightbulb, ArrowRight, TrendingDown, Clock } from "lucide-react";
+import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper, Lightbulb, ArrowRight, TrendingDown, Clock, TrendingUp } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
@@ -171,6 +171,17 @@ function LivePlan() {
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Actions you&apos;ve already committed to improve your finances.
+            </p>
+          </div>
+
+          {/* Cash flow improvement banner */}
+          <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
+            <TrendingUp className="h-4 w-4 text-success shrink-0" />
+            <p className="text-sm text-foreground">
+              Your active commitments are improving your monthly cash flow by{" "}
+              <span className="font-semibold text-success">
+                {formatINR(data.total_committed_reductions ?? 0)}/mo
+              </span>
             </p>
           </div>
 
