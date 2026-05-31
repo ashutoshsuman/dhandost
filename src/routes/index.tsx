@@ -27,6 +27,14 @@ type PlanGoal = {
   priority: number;
 };
 
+type ActiveCommitment = {
+  action?: string;
+  amount?: number;
+  target?: string;
+  category?: string;
+  description?: string;
+};
+
 type PlanResponse = {
   expected_monthly_income: number;
   total_fixed_outflows: number;
