@@ -57,7 +57,7 @@ export function readPathsResponse(): ThreePathsResponse | null {
 }
 
 export async function fetchThreePaths(input: {
-  trigger_type: "surprise_income" | "surprise_expense";
+  trigger_type: "surprise_income" | "surprise_expense" | "drift_correction";
   trigger_amount: number;
   trigger_description: string | null;
   trigger_transaction_id?: string | null;
