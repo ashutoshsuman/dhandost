@@ -210,18 +210,17 @@ function LivePlan() {
                         : `🎯 ${c.goal_name || "Goal"}`}
                     </p>
                     {isReduce ? (
-                      <div className="space-y-0.5 mt-0.5">
-                        <p className="text-[11px] text-muted-foreground">
-                          {formatINR(c.monthly_amount ?? 0)}/mo
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {c.duration_months ?? "—"} months
-                          {c.ends_at && (
-                            <span className="block">Ends: {formatDate(c.ends_at)}</span>
-                          )}
-                        </p>
-                        <p className="text-[11px] text-primary/80">Active</p>
-                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {c.duration_months ?? "—"} months
+                        {c.ends_at && (
+                          <>
+                            <span className="mx-1">·</span>
+                            Ends: {formatDate(c.ends_at)}
+                          </>
+                        )}
+                        <span className="mx-1">·</span>
+                        <span className="text-primary/80">Active</span>
+                      </p>
                     ) : (
                       <p className="text-[11px] text-muted-foreground truncate">
                         Delayed by {c.delay_weeks ?? "—"} weeks
@@ -231,11 +230,11 @@ function LivePlan() {
                     )}
                   </div>
 
-                  {!isReduce && (
-                    <span className="text-sm font-semibold tabular-nums text-success whitespace-nowrap shrink-0 mt-0.5">
-                      {c.delay_weeks ?? "—"} weeks
-                    </span>
-                  )}
+                  <span className="text-sm font-semibold tabular-nums text-success whitespace-nowrap shrink-0 mt-0.5">
+                    {isReduce
+                      ? `${formatINR(c.monthly_amount ?? 0)}/mo`
+                      : `${c.delay_weeks ?? "—"} weeks`}
+                  </span>
                 </div>
               );
             })}
