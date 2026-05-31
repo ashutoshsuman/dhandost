@@ -315,7 +315,7 @@ function ForecastCard({
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="inline-flex items-center gap-2 rounded-lg bg-debit text-white text-sm font-medium px-3 py-2 hover:bg-debit/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-debit text-white text-sm font-medium px-3 py-2 hover:bg-debit/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             {generating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
