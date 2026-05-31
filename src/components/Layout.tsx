@@ -2,6 +2,8 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import logo from "@/assets/dhandost-logo.png";
 import { supabase } from "@/lib/supabase";
+import { TrustBadge } from "@/components/TrustBadge";
+
 
 const nav = [
   { to: "/", label: "Live Plan" },
@@ -31,14 +33,17 @@ export function Layout({ children }: { children?: React.ReactNode }) {
     <div className="min-h-screen bg-gradient-subtle">
       <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
         <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between flex-wrap gap-3">
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center gap-3">
             <img
               src={logo}
               alt="DhanDost"
               className="h-[140px] w-[140px] rounded-2xl object-contain"
             />
           </Link>
-          <nav className="flex gap-1 text-sm flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
+            <TrustBadge />
+            <nav className="flex gap-1 text-sm flex-wrap">
+
             {nav.map((n) => {
               const active = n.to === "/" ? path === "/" : path.startsWith(n.to);
               const showBadge = n.to === "/review" && reviewCount > 0;
