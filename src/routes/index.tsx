@@ -34,6 +34,7 @@ type ActiveCommitment = {
   monthly_amount?: number;
   duration_months?: number;
   delay_weeks?: number;
+  ends_at?: string;
 };
 
 type PlanResponse = {
