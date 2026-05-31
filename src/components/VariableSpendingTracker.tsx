@@ -2,17 +2,22 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import { formatINR } from "@/lib/format";
 
+type Status = "under" | "within" | "over";
+
 type CategoryRow = {
   category: string;
   actual: number;
   baseline: number;
   variance: number;
+  variance_percent?: number;
+  status?: Status;
 };
 
 type InsightsResponse = {
-  total_variable_spend: number;
   total_baseline: number;
-  variance: number;
+  total_actual: number;
+  total_variance: number;
+  top_risk_category?: string | null;
   categories: CategoryRow[];
 };
 
@@ -20,9 +25,8 @@ const URL =
   "https://ibjsdafxjggjyamkdjeh.supabase.co/functions/v1/variable-spending-insights";
 const KEY = "sb_publishable_ztTyEdZPNNfk5PjttJimDg_-g3fmC0D";
 
-type Status = "under" | "within" | "over";
-
-function statusFor(actual: number, baseline: number): Status {
+function statusFor(actual: number, baseline: number, provided?: Status): Status {
+  if (provided) return provided;
   if (baseline <= 0) return actual > 0 ? "over" : "under";
   if (actual <= baseline) return "under";
   if (actual <= baseline * 1.1) return "within";
@@ -95,20 +99,20 @@ export default function VariableSpendingTracker() {
     (a, b) => (b.variance ?? 0) - (a.variance ?? 0),
   );
 
-  const overall = statusFor(data.total_variable_spend, data.total_baseline);
+  const overall = statusFor(data.total_actual, data.total_baseline);
   const overallStyles = statusStyles[overall];
 
   return (
     <section className="space-y-3">
-      <Header />
+      <Header topRisk={data.top_risk_category} />
 
       {/* Top totals */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Stat label="Total Variable Spend" value={formatINR(data.total_variable_spend)} />
+        <Stat label="Total Variable Spend" value={formatINR(data.total_actual)} />
         <Stat label="Total Baseline" value={formatINR(data.total_baseline)} />
         <Stat
           label="Variance"
-          value={`${data.variance > 0 ? "+" : ""}${formatINR(data.variance)}`}
+          value={`${data.total_variance > 0 ? "+" : ""}${formatINR(data.total_variance)}`}
           accentClass={overallStyles.text}
           icon={
             overall === "over" ? (
@@ -130,7 +134,7 @@ export default function VariableSpendingTracker() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {sorted.map((c) => {
-            const s = statusFor(c.actual, c.baseline);
+            const s = statusFor(c.actual, c.baseline, c.status);
             const st = statusStyles[s];
             return (
               <div
@@ -145,6 +149,12 @@ export default function VariableSpendingTracker() {
                     className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${st.chipBg} ${st.text}`}
                   >
                     {st.label}
+                    {typeof c.variance_percent === "number" && (
+                      <span className="ml-1 opacity-80">
+                        {c.variance_percent > 0 ? "+" : ""}
+                        {Math.round(c.variance_percent)}%
+                      </span>
+                    )}
                   </span>
                 </div>
                 <div className="mt-1.5 flex items-end justify-between gap-3">
@@ -177,15 +187,22 @@ export default function VariableSpendingTracker() {
   );
 }
 
-function Header() {
+function Header({ topRisk }: { topRisk?: string | null }) {
   return (
-    <div>
-      <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-        Variable Spending Tracker
-      </h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Compare this month&apos;s discretionary spend against your baseline.
-      </p>
+    <div className="flex items-end justify-between gap-3">
+      <div>
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+          Variable Spending Tracker
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Compare this month&apos;s discretionary spend against your baseline.
+        </p>
+      </div>
+      {topRisk && (
+        <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-debit/10 text-debit shrink-0">
+          Top risk: {topRisk}
+        </span>
+      )}
     </div>
   );
 }
