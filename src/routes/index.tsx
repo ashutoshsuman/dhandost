@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper, Lightbulb } from "lucide-react";
+import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper, Lightbulb, ArrowRight, TrendingDown, Clock } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
@@ -28,11 +28,11 @@ type PlanGoal = {
 };
 
 type ActiveCommitment = {
-  action?: string;
-  amount?: number;
-  target?: string;
+  commitment_type?: "reduce_discretionary" | "delay_goal";
   category?: string;
-  description?: string;
+  monthly_amount?: number;
+  duration_months?: number;
+  delay_weeks?: number;
 };
 
 type PlanResponse = {
@@ -160,57 +160,89 @@ function LivePlan() {
       </section>
 
       {/* Active Commitments */}
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-            Active Commitments
-            {data.active_commitments && data.active_commitments.length > 0 && (
+      {data.active_commitments && data.active_commitments.length > 0 ? (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              Active Commitments
               <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
                 {data.active_commitments.length}
               </span>
-            )}
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Actions you&apos;ve already committed to improve your finances.
-          </p>
-        </div>
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Actions you&apos;ve already committed to improve your finances.
+            </p>
+          </div>
 
-        {!data.active_commitments || data.active_commitments.length === 0 ? (
+          <div className="space-y-1.5">
+            {data.active_commitments.map((c, i) => {
+              const isReduce = c.commitment_type === "reduce_discretionary";
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5"
+                >
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary/60">
+                    {isReduce ? (
+                      <TrendingDown className="h-3.5 w-3.5 text-debit" />
+                    ) : (
+                      <Clock className="h-3.5 w-3.5 text-warning" />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {isReduce
+                        ? `Reduce ${c.category || "spending"}`
+                        : "Goal Delayed"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {isReduce
+                        ? `${c.duration_months ?? "—"} months`
+                        : "Goal postponed"}
+                      <span className="mx-1">·</span>
+                      <span className="text-primary/80">Active</span>
+                    </p>
+                  </div>
+
+                  <span className="text-sm font-semibold tabular-nums text-success whitespace-nowrap shrink-0">
+                    {isReduce
+                      ? `${formatINR(c.monthly_amount ?? 0)}/mo`
+                      : `${c.delay_weeks ?? "—"} weeks`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              Active Commitments
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Actions you&apos;ve already committed to improve your finances.
+            </p>
+          </div>
           <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
             <Lightbulb className="mx-auto h-5 w-5 text-muted-foreground/60" />
-            <p className="mt-2 text-sm font-medium text-foreground">No active commitments yet</p>
+            <p className="mt-2 text-sm font-medium text-foreground">
+              No active commitments yet
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">
               Apply a Three Paths recommendation to start tracking commitments.
             </p>
+            <Link
+              to="/paths"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              See Three Paths
+              <ArrowRight className="h-3 w-3" />
+            </Link>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3">
-            {data.active_commitments.map((c, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-border bg-card p-4 flex items-start justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {c.action || c.description || "Commitment"}
-                  </p>
-                  {(c.target || c.category) && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {c.target || c.category}
-                    </p>
-                  )}
-                </div>
-                {typeof c.amount === "number" && (
-                  <span className="text-sm font-semibold tabular-nums text-success whitespace-nowrap shrink-0">
-                    {formatINR(c.amount)}
-                    <span className="text-xs font-normal text-muted-foreground ml-0.5">/mo</span>
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Breakdown */}
       <section className="rounded-xl border border-border bg-card divide-y divide-border">
