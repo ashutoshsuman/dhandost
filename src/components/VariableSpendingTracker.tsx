@@ -245,3 +245,91 @@ function Stat({
     </div>
   );
 }
+
+function ForecastCard({
+  forecastSpend,
+  forecastVariance,
+  topRisk,
+}: {
+  forecastSpend?: number;
+  forecastVariance?: number;
+  topRisk?: string | null;
+}) {
+  const navigate = useNavigate();
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (forecastSpend == null && forecastVariance == null) return null;
+
+  const variance = forecastVariance ?? 0;
+  const overspend = variance > 0;
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setError(null);
+    try {
+      const resp = await fetchThreePaths({
+        trigger_type: "drift_correction",
+        trigger_amount: variance,
+        trigger_description: "Forecasted variable spending overspend",
+      });
+      storePathsResponse(resp);
+      navigate({ to: "/paths" });
+    } catch (e) {
+      setError((e as Error).message);
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Stat
+          label="Forecast Spend"
+          value={forecastSpend != null ? formatINR(forecastSpend) : "—"}
+        />
+        <Stat
+          label="Projected Overspend"
+          value={overspend ? formatINR(variance) : formatINR(0)}
+          accentClass={overspend ? "text-debit" : "text-success"}
+        />
+        <Stat
+          label="Risk Driver"
+          value={topRisk || "—"}
+          accentClass={topRisk ? "text-debit" : undefined}
+        />
+      </div>
+
+      {overspend && (
+        <div className="rounded-xl border border-debit/30 bg-debit/5 p-4 space-y-3">
+          <div className="flex items-start gap-2 text-sm text-debit">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+            <p>
+              At your current pace you may overspend by{" "}
+              <span className="font-semibold tabular-nums">
+                {formatINR(variance)}
+              </span>{" "}
+              this month.
+            </p>
+          </div>
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="inline-flex items-center gap-2 rounded-lg bg-debit text-white text-sm font-medium px-3 py-2 hover:bg-debit/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            {generating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {generating ? "Generating…" : "Generate Recovery Plan"}
+          </button>
+          {error && (
+            <p className="text-xs text-debit">{error}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
