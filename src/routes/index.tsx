@@ -34,6 +34,7 @@ type PlanResponse = {
   discretionary_headroom: number;
   total_committed_reductions?: number;
   projected_discretionary_headroom?: number;
+  active_commitments?: ActiveCommitment[];
   total_debt_balance: number;
   weighted_avg_interest_rate: number;
   debt_count?: number;
