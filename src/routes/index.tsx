@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper } from "lucide-react";
+import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper, Lightbulb } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
@@ -27,6 +27,14 @@ type PlanGoal = {
   priority: number;
 };
 
+type ActiveCommitment = {
+  action?: string;
+  amount?: number;
+  target?: string;
+  category?: string;
+  description?: string;
+};
+
 type PlanResponse = {
   expected_monthly_income: number;
   total_fixed_outflows: number;
@@ -34,6 +42,7 @@ type PlanResponse = {
   discretionary_headroom: number;
   total_committed_reductions?: number;
   projected_discretionary_headroom?: number;
+  active_commitments?: ActiveCommitment[];
   total_debt_balance: number;
   weighted_avg_interest_rate: number;
   debt_count?: number;
@@ -148,6 +157,59 @@ function LivePlan() {
             After active commitments
           </p>
         </div>
+      </section>
+
+      {/* Active Commitments */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Active Commitments
+            {data.active_commitments && data.active_commitments.length > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                {data.active_commitments.length}
+              </span>
+            )}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Actions you&apos;ve already committed to improve your finances.
+          </p>
+        </div>
+
+        {!data.active_commitments || data.active_commitments.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
+            <Lightbulb className="mx-auto h-5 w-5 text-muted-foreground/60" />
+            <p className="mt-2 text-sm font-medium text-foreground">No active commitments yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Apply a Three Paths recommendation to start tracking commitments.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            {data.active_commitments.map((c, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-border bg-card p-4 flex items-start justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {c.action || c.description || "Commitment"}
+                  </p>
+                  {(c.target || c.category) && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {c.target || c.category}
+                    </p>
+                  )}
+                </div>
+                {typeof c.amount === "number" && (
+                  <span className="text-sm font-semibold tabular-nums text-success whitespace-nowrap shrink-0">
+                    {formatINR(c.amount)}
+                    <span className="text-xs font-normal text-muted-foreground ml-0.5">/mo</span>
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Breakdown */}
