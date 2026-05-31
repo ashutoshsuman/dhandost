@@ -121,6 +121,7 @@ function LivePlan() {
   return (
     <div className="max-w-2xl mx-auto space-y-10 pb-8">
       <SpendSummary />
+      <VariableSpendingTracker />
       {/* Financial Snapshot KPIs */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Current Headroom */}
