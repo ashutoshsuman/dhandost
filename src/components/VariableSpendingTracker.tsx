@@ -131,6 +131,14 @@ export default function VariableSpendingTracker() {
         />
       </div>
 
+      <ForecastCard
+        forecastSpend={data.forecast_total_month_end_spend}
+        forecastVariance={data.forecast_total_variance}
+        topRisk={data.top_risk_category}
+      />
+
+
+
       {/* Category cards */}
       {sorted.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-muted/30 p-5 text-center text-xs text-muted-foreground">
