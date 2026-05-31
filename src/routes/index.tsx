@@ -193,9 +193,9 @@ function LivePlan() {
               return (
                 <div
                   key={i}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5"
+                  className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-2.5"
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary/60">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary/60 mt-0.5">
                     {isReduce ? (
                       <TrendingDown className="h-3.5 w-3.5 text-debit" />
                     ) : (
@@ -206,23 +206,36 @@ function LivePlan() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground truncate">
                       {isReduce
-                        ? `Reduce ${c.category || "spending"}`
+                        ? `📉 Reduce ${c.category || "spending"}`
                         : `🎯 ${c.goal_name || "Goal"}`}
                     </p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {isReduce
-                        ? `${c.duration_months ?? "—"} months`
-                        : `Delayed by ${c.delay_weeks ?? "—"} weeks`}
-                      <span className="mx-1">·</span>
-                      <span className="text-primary/80">Active</span>
-                    </p>
+                    {isReduce ? (
+                      <div className="space-y-0.5 mt-0.5">
+                        <p className="text-[11px] text-muted-foreground">
+                          {formatINR(c.monthly_amount ?? 0)}/mo
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {c.duration_months ?? "—"} months
+                          {c.ends_at && (
+                            <span className="block">Ends: {formatDate(c.ends_at)}</span>
+                          )}
+                        </p>
+                        <p className="text-[11px] text-primary/80">Active</p>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        Delayed by {c.delay_weeks ?? "—"} weeks
+                        <span className="mx-1">·</span>
+                        <span className="text-primary/80">Active</span>
+                      </p>
+                    )}
                   </div>
 
-                  <span className="text-sm font-semibold tabular-nums text-success whitespace-nowrap shrink-0">
-                    {isReduce
-                      ? `${formatINR(c.monthly_amount ?? 0)}/mo`
-                      : `${c.delay_weeks ?? "—"} weeks`}
-                  </span>
+                  {!isReduce && (
+                    <span className="text-sm font-semibold tabular-nums text-success whitespace-nowrap shrink-0 mt-0.5">
+                      {c.delay_weeks ?? "—"} weeks
+                    </span>
+                  )}
                 </div>
               );
             })}
