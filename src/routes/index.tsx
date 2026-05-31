@@ -29,6 +29,7 @@ type PlanGoal = {
 
 type ActiveCommitment = {
   commitment_type?: "reduce_discretionary" | "delay_goal";
+  goal_name?: string;
   category?: string;
   monthly_amount?: number;
   duration_months?: number;
@@ -205,12 +206,12 @@ function LivePlan() {
                     <p className="text-sm font-medium text-foreground truncate">
                       {isReduce
                         ? `Reduce ${c.category || "spending"}`
-                        : "Goal Delayed"}
+                        : `🎯 ${c.goal_name || "Goal"}`}
                     </p>
                     <p className="text-[11px] text-muted-foreground truncate">
                       {isReduce
                         ? `${c.duration_months ?? "—"} months`
-                        : "Goal postponed"}
+                        : `Delayed by ${c.delay_weeks ?? "—"} weeks`}
                       <span className="mx-1">·</span>
                       <span className="text-primary/80">Active</span>
                     </p>
