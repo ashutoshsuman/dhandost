@@ -295,9 +295,27 @@ function AddForm({ onClose, categories }: { onClose: () => void; categories: str
       if (cat) payload.category = cat;
       const { error } = await supabase.from("transactions").insert(payload);
       if (error) throw error;
+
+      // Trigger AI categorization for the newly inserted row(s) and wait for it
+      // to finish so the category appears immediately on refresh.
+      if (!cat) {
+        try {
+          await fetch(`${SUPABASE_URL}/functions/v1/categorize-transactions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({ limit: 10 }),
+          });
+        } catch (e) {
+          console.error("categorize-transactions failed", e);
+        }
+      }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["transactions"] });
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["transactions"] });
       onClose();
     },
   });
