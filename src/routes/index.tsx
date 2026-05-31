@@ -6,6 +6,7 @@ import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
 import SpendSummary from "@/components/SpendSummary";
+import VariableSpendingTracker from "@/components/VariableSpendingTracker";
 
 export const Route = createFileRoute("/")({
   component: () => (
