@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { Layout } from "@/components/Layout";
-import { supabase, type Transaction } from "@/lib/supabase";
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY, type Transaction } from "@/lib/supabase";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
