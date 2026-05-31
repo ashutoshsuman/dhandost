@@ -89,7 +89,7 @@ function ImportPage() {
       });
     } catch (e) {
       console.error("Failed to parse file", e);
-      alert("Could not parse this file. Try CSV or XLSX, or a text-based PDF.");
+      alert("Could not parse this file. Try CSV or XLSX.");
     }
   };
 
@@ -158,7 +158,7 @@ function ImportPage() {
       <div>
         <h1 className="text-2xl font-semibold">Import CSV</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload a bank statement (CSV, XLS/XLSX, or text-based PDF). Map the columns, preview, then confirm.
+          Upload a bank statement (CSV, XLS/XLSX). Map the columns, preview, then confirm.
         </p>
       </div>
 
@@ -166,7 +166,7 @@ function ImportPage() {
         <Field label="Statement file">
           <input
             type="file"
-            accept=".csv,.xls,.xlsx,.xlsm,.pdf,text/csv,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            accept=".csv,.xls,.xlsx,.xlsm,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
             className="text-sm cursor-pointer w-full"
           />
