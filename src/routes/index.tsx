@@ -107,35 +107,48 @@ function LivePlan() {
   return (
     <div className="max-w-2xl mx-auto space-y-10 pb-8">
       <SpendSummary />
-      {/* Hero */}
-      <Expandable
-        summary={
-          <section className="text-center pt-4">
-            <p className="text-5xl md:text-6xl font-semibold tabular-nums tracking-tight">
-              {formatINR(headroom)}
-            </p>
-            <p className="mt-3 text-sm text-foreground">
-              available to spend freely this month
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              after fixed expenses and goal savings
-            </p>
-          </section>
-        }
-        detail={
-          <p>
-            Discretionary headroom = Expected income −
-            Fixed outflows − Goal savings required.
-            <br />
-            <span className="text-muted-foreground">
-              {formatINR(data.expected_monthly_income)} −{" "}
-              {formatINR(data.total_fixed_outflows)} −{" "}
-              {formatINR(data.total_goal_savings_required)} ={" "}
-              {formatINR(headroom)}
-            </span>
+      {/* Financial Snapshot KPIs */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Current Headroom */}
+        <div className="rounded-xl border border-border bg-card p-5 text-center">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Current Headroom
           </p>
-        }
-      />
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
+            {formatINR(headroom)}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            available this month
+          </p>
+        </div>
+
+        {/* Committed Improvement */}
+        <div className="rounded-xl border border-success/30 bg-card p-5 text-center">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Committed Improvement
+          </p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-success">
+            {formatINR(data.total_committed_reductions ?? 0)}
+            <span className="text-sm font-medium text-muted-foreground ml-0.5">/mo</span>
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            from active commitments
+          </p>
+        </div>
+
+        {/* Projected Headroom */}
+        <div className="rounded-xl border border-border bg-card p-5 text-center">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Projected Headroom
+          </p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
+            {formatINR(data.projected_discretionary_headroom ?? 0)}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            After active commitments
+          </p>
+        </div>
+      </section>
 
       {/* Breakdown */}
       <section className="rounded-xl border border-border bg-card divide-y divide-border">
