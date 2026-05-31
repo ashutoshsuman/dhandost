@@ -6,6 +6,7 @@ import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
 import SpendSummary from "@/components/SpendSummary";
+import VariableSpendingTracker from "@/components/VariableSpendingTracker";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -120,6 +121,7 @@ function LivePlan() {
   return (
     <div className="max-w-2xl mx-auto space-y-10 pb-8">
       <SpendSummary />
+      <VariableSpendingTracker />
       {/* Financial Snapshot KPIs */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Current Headroom */}
