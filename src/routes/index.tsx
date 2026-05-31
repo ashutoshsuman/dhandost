@@ -174,6 +174,17 @@ function LivePlan() {
             </p>
           </div>
 
+          {/* Cash flow improvement banner */}
+          <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
+            <TrendingUp className="h-4 w-4 text-success shrink-0" />
+            <p className="text-sm text-foreground">
+              Your active commitments are improving your monthly cash flow by{" "}
+              <span className="font-semibold text-success">
+                {formatINR(data.total_committed_reductions ?? 0)}/mo
+              </span>
+            </p>
+          </div>
+
           <div className="space-y-1.5">
             {data.active_commitments.map((c, i) => {
               const isReduce = c.commitment_type === "reduce_discretionary";
