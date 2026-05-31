@@ -247,35 +247,6 @@ function LivePlan() {
   );
 }
 
-function Expandable({
-  summary,
-  detail,
-}: {
-  summary: React.ReactNode;
-  detail: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full text-left group cursor-pointer"
-      >
-        <div className="relative">
-          {summary}
-          <span className="absolute top-0 right-0 text-muted-foreground opacity-60 group-hover:opacity-100">
-            <Info className="h-3.5 w-3.5" />
-          </span>
-        </div>
-      </button>
-      {open && (
-        <div className="mt-4 rounded-lg bg-secondary/60 px-4 py-3 text-xs text-foreground/80 leading-relaxed">
-          {detail}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function BreakdownRow({
   label,
