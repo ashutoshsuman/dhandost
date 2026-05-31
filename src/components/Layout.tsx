@@ -67,11 +67,23 @@ export function Layout({ children }: { children?: React.ReactNode }) {
               );
             })}
           </nav>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-6 py-8">
         {children ?? <Outlet />}
       </main>
+      <footer className="border-t border-border bg-card/60 mt-12">
+        <div className="mx-auto max-w-5xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+          <span>© {new Date().getFullYear()} DhanDost</span>
+          <nav className="flex items-center gap-4">
+            <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
+            <a href="/security" className="hover:text-foreground transition-colors">Security</a>
+            <a href="/data-policy" className="hover:text-foreground transition-colors">Data Policy</a>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }
+

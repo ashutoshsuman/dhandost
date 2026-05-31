@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui-primitives";
+import WhyThisRecommendation from "@/components/WhyThisRecommendation";
+
 
 import { supabase } from "@/lib/supabase";
 import {
@@ -281,6 +283,10 @@ function PathsPage() {
         ))}
 
       </div>
+
+      <WhyThisRecommendation />
+
+
 
       <div className="rounded-lg border border-border bg-secondary/30 p-4 text-xs text-muted-foreground">
         This is general guidance, not investment advice. Specific products are intentionally not named.
