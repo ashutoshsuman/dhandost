@@ -37,8 +37,15 @@ export function CoachChat({
     setMessages((m) => [...m, { role: "user", content: message }]);
     setPending(true);
     try {
+      const isFollowUp = messages.length > 0;
+      const directive = isFollowUp
+        ? "\n\n[Instruction: This is a follow-up. Use prior context silently — do NOT restate or summarize the previous answer. Answer only what is asked now, concisely.]"
+        : "";
       const { data, error } = await supabase.functions.invoke("financial-chat", {
-        body: { conversation_id: conversationId, message },
+        body: {
+          conversation_id: conversationId,
+          message: message + directive,
+        },
       });
       if (error || !data || (data as any).error) {
         setMessages((m) => [
