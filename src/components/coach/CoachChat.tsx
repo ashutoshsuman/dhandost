@@ -3,17 +3,6 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/lib/supabase";
 import { useCoach, type CoachMessage } from "./CoachContext";
 
-function buildCoachRequestMessage(message: string, isFollowUp: boolean) {
-  if (!isFollowUp) return message;
-
-  return [
-    "Response rule for this turn: use earlier conversation only as private context.",
-    "Do not restate, recap, summarize, quote, or lead with any previous answer.",
-    "Start immediately with the answer to the current question below.",
-    "",
-    `Current question: ${message}`,
-  ].join("\n");
-}
 
 function wordSpans(text: string) {
   const words: Array<{ word: string; end: number }> = [];
@@ -88,11 +77,10 @@ export function CoachChat({
     setMessages((m) => [...m, { role: "user", content: message }]);
     setPending(true);
     try {
-      const requestMessage = buildCoachRequestMessage(message, previousMessages.length > 0);
       const { data, error } = await supabase.functions.invoke("financial-chat", {
         body: {
           conversation_id: conversationId,
-          message: requestMessage,
+          message,
         },
       });
       const response = data as { error?: unknown; conversation_id?: string; reply?: string } | null;
