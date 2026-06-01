@@ -96,7 +96,7 @@ export function CoachChat({
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="text-left px-3 py-2 rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors text-sm"
+                  className="text-left px-3 py-2 rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors text-sm cursor-pointer"
                 >
                   {s}
                 </button>
