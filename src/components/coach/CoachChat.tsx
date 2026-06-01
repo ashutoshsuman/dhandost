@@ -1,12 +1,62 @@
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/lib/supabase";
-import { useCoach } from "./CoachContext";
+import { useCoach, type CoachMessage } from "./CoachContext";
 
-const STARTERS = [
-  "How am I doing this month?",
-  "Which debt should I clear first?",
-];
+function buildCoachRequestMessage(message: string, isFollowUp: boolean) {
+  if (!isFollowUp) return message;
+
+  return [
+    "Response rule for this turn: use earlier conversation only as private context.",
+    "Do not restate, recap, summarize, quote, or lead with any previous answer.",
+    "Start immediately with the answer to the current question below.",
+    "",
+    `Current question: ${message}`,
+  ].join("\n");
+}
+
+function wordSpans(text: string) {
+  const words: Array<{ word: string; end: number }> = [];
+  const matcher = /[\p{L}\p{N}]+/gu;
+  let match: RegExpExecArray | null;
+
+  while ((match = matcher.exec(text))) {
+    words.push({ word: match[0].toLowerCase(), end: matcher.lastIndex });
+  }
+
+  return words;
+}
+
+function stripRepeatedPriorOpening(reply: string, previousMessages: CoachMessage[]) {
+  const previousAssistant = [...previousMessages]
+    .reverse()
+    .find((message) => message.role === "assistant")?.content;
+
+  if (!previousAssistant) return reply.trim();
+
+  const replyWords = wordSpans(reply);
+  const priorWords = wordSpans(previousAssistant);
+  let sharedPrefixWords = 0;
+
+  while (
+    sharedPrefixWords < replyWords.length &&
+    sharedPrefixWords < priorWords.length &&
+    replyWords[sharedPrefixWords].word === priorWords[sharedPrefixWords].word
+  ) {
+    sharedPrefixWords += 1;
+  }
+
+  if (sharedPrefixWords >= 10) {
+    return reply
+      .slice(replyWords[sharedPrefixWords - 1].end)
+      .replace(/^[\s.,:;\-–—]+/, "")
+      .trim();
+  }
+
+  return reply.trim();
+}
+
+const STARTERS = ["How am I doing this month?", "Which debt should I clear first?"];
 
 export function CoachChat({
   autoFocus = false,
@@ -33,29 +83,27 @@ export function CoachChat({
   async function send(text: string) {
     const message = text.trim();
     if (!message || pending) return;
+    const previousMessages = messages;
     setInput("");
     setMessages((m) => [...m, { role: "user", content: message }]);
     setPending(true);
     try {
-      const isFollowUp = messages.length > 0;
-      const directive = isFollowUp
-        ? "\n\n[Instruction: This is a follow-up. Use prior context silently — do NOT restate or summarize the previous answer. Answer only what is asked now, concisely.]"
-        : "";
+      const requestMessage = buildCoachRequestMessage(message, previousMessages.length > 0);
       const { data, error } = await supabase.functions.invoke("financial-chat", {
         body: {
           conversation_id: conversationId,
-          message: message + directive,
+          message: requestMessage,
         },
       });
-      if (error || !data || (data as any).error) {
+      const response = data as { error?: unknown; conversation_id?: string; reply?: string } | null;
+      if (error || !response || response.error) {
         setMessages((m) => [
           ...m,
           { role: "assistant", content: "Something went wrong — please try again." },
         ]);
       } else {
-        const d = data as { conversation_id?: string; reply?: string };
-        if (d.conversation_id) setConversationId(d.conversation_id);
-        const replyText = (d.reply ?? "").trim();
+        if (response.conversation_id) setConversationId(response.conversation_id);
+        const replyText = stripRepeatedPriorOpening(response.reply ?? "", previousMessages);
         setMessages((m) => [
           ...m,
           {
@@ -94,9 +142,7 @@ export function CoachChat({
       >
         {messages.length === 0 && !pending && (
           <div className="space-y-4 text-[15px]">
-            <p style={{ color: "#9aa5b1" }}>
-              Ask about your plan, spending, goals, or debts.
-            </p>
+            <p style={{ color: "#9aa5b1" }}>Ask about your plan, spending, goals, or debts.</p>
             <div className="flex flex-col gap-2 items-start">
               {STARTERS.map((s) => (
                 <button
