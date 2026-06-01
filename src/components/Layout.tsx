@@ -84,6 +84,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           </nav>
         </div>
       </footer>
+      {path !== "/chat" && <CoachLauncher />}
     </div>
   );
 }
