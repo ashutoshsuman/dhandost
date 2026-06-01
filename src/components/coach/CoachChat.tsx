@@ -77,14 +77,15 @@ export function CoachChat({
     setMessages((m) => [...m, { role: "user", content: message }]);
     setPending(true);
     try {
-      const { data, error } = await supabase.functions.invoke("financial-chat", {
-        body: {
-          conversation_id: conversationId,
-          message,
-        },
+      const response = await invokeFn<{
+        error?: unknown;
+        conversation_id?: string;
+        reply?: string;
+      }>("financial-chat", {
+        conversation_id: conversationId,
+        message,
       });
-      const response = data as { error?: unknown; conversation_id?: string; reply?: string } | null;
-      if (error || !response || response.error) {
+      if (!response || response.error) {
         setMessages((m) => [
           ...m,
           { role: "assistant", content: "Something went wrong — please try again." },
@@ -100,7 +101,8 @@ export function CoachChat({
           },
         ]);
       }
-    } catch {
+    } catch (e) {
+      console.error("financial-chat failed", e);
       setMessages((m) => [
         ...m,
         { role: "assistant", content: "Something went wrong — please try again." },
