@@ -15,6 +15,10 @@ import {
   type PathOption,
   type ThreePathsResponse,
 } from "@/lib/three-paths";
+import {
+  consumeRecoveryPlanFlow,
+  markRecoveryPlanActiveThisMonth,
+} from "@/lib/recovery-plan";
 
 function formatINR(n: number): string {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
