@@ -213,6 +213,12 @@ function PathsPage() {
         if (data.trigger_transaction_id) {
           markPlanAppliedForTx(data.trigger_transaction_id);
         }
+
+        // If this apply originated from the Variable Spending Tracker's
+        // recovery-plan flow, lock the recovery card for the rest of the month.
+        if (consumeRecoveryPlanFlow()) {
+          markRecoveryPlanActiveThisMonth();
+        }
       } else {
         const { error } = await supabase.from("path_selections").insert({
           path_chosen: label,
