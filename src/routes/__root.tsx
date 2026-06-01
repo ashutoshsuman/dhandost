@@ -8,6 +8,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { CoachProvider } from "@/components/coach/CoachContext";
+import { AuthGate } from "@/components/auth/AuthGate";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
