@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import logo from "@/assets/dhandost-logo.png";
 import { supabase } from "@/lib/supabase";
 import { TrustBadge } from "@/components/TrustBadge";
+import { CoachLauncher } from "@/components/coach/CoachLauncher";
 
 
 const nav = [
@@ -83,6 +84,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           </nav>
         </div>
       </footer>
+      {path !== "/chat" && <CoachLauncher />}
     </div>
   );
 }
