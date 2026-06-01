@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, TrendingUp, Flame } from "lucide-react";
 import { formatINR } from "@/lib/format";
+import { invokeFn } from "@/lib/invokeFn";
 
 type CategoryRow = {
   category: string;
@@ -19,10 +20,6 @@ type InsightsResponse = {
   categories: CategoryRow[];
 };
 
-const URL =
-  "https://ibjsdafxjggjyamkdjeh.supabase.co/functions/v1/variable-spending-insights";
-const KEY = "sb_publishable_ztTyEdZPNNfk5PjttJimDg_-g3fmC0D";
-
 function isOver(c: CategoryRow) {
   if (c.status) return c.status === "over";
   return c.actual > c.baseline;
@@ -31,13 +28,7 @@ function isOver(c: CategoryRow) {
 export default function SpendingInsights() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["variable-spending-insights"],
-    queryFn: async () => {
-      const res = await fetch(URL, {
-        headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as InsightsResponse;
-    },
+    queryFn: () => invokeFn<InsightsResponse>("variable-spending-insights"),
     retry: false,
   });
 
