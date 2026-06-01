@@ -56,12 +56,28 @@ type PlanResponse = {
   computed_at: string;
 };
 
-import { invokeFn } from "@/lib/invokeFn";
-
 function LivePlan() {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["compute-plan"],
-    queryFn: () => invokeFn<PlanResponse>("hyper-action"),
+    queryFn: async () => {
+      // Ensure the user is authenticated before invoking the edge function.
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        await supabase.auth.signOut();
+        throw new Error("Not authenticated");
+      }
+      // Shared authenticated supabase client — invoke() auto-attaches the
+      // user's access token. Do NOT use fetch() or set headers manually.
+      const { data, error } = await supabase.functions.invoke<PlanResponse>(
+        "hyper-action",
+        { body: {} },
+      );
+      if (error) {
+        console.error("hyper-action failed:", error);
+        throw error;
+      }
+      return data as PlanResponse;
+    },
   });
 
   const { data: completedGoals } = useQuery({
