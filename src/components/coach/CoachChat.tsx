@@ -136,7 +136,7 @@ export function CoachChat({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
             rows={1}
-            placeholder="Message Coach…"
+            placeholder="Message Your Personal Finance Friend…"
             className="flex-1 resize-none rounded-xl border border-neutral-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-neutral-200 max-h-40"
           />
           <button

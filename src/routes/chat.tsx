@@ -6,7 +6,7 @@ export const Route = createFileRoute("/chat")({
   component: () => (
     <Layout>
       <div className="mx-auto w-full max-w-[760px]">
-        <h1 className="text-2xl font-semibold mb-4">Coach</h1>
+        <h1 className="text-2xl font-semibold mb-4">Your Personal Finance Friend</h1>
         <div className="h-[calc(100vh-220px)] min-h-[480px] rounded-xl border border-neutral-200 overflow-hidden bg-white">
           <CoachChat autoFocus />
         </div>
