@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import ReactMarkdown from "react-markdown";
-import { supabase } from "@/lib/supabase";
+import { invokeFn } from "@/lib/invokeFn";
 import { useCoach, type CoachMessage } from "./CoachContext";
 
 
