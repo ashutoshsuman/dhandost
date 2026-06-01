@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import ReactMarkdown from "react-markdown";
-import { invokeFn } from "@/lib/invokeFn";
+import { supabase } from "@/lib/supabase";
 import { useCoach, type CoachMessage } from "./CoachContext";
 
 
@@ -77,15 +77,24 @@ export function CoachChat({
     setMessages((m) => [...m, { role: "user", content: message }]);
     setPending(true);
     try {
-      const response = await invokeFn<{
+      const { data: response, error } = await supabase.functions.invoke<{
         error?: unknown;
         conversation_id?: string;
         reply?: string;
       }>("financial-chat", {
-        conversation_id: conversationId,
-        message,
+        body: {
+          conversation_id: conversationId,
+          message,
+        },
       });
+
+      if (error) {
+        console.error("financial-chat failed", error);
+        throw error;
+      }
+
       if (!response || response.error) {
+        if (response?.error) console.error("financial-chat returned error", response.error);
         setMessages((m) => [
           ...m,
           { role: "assistant", content: "Something went wrong — please try again." },
