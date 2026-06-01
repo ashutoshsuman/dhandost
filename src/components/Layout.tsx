@@ -67,6 +67,13 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                 </Link>
               );
             })}
+            <button
+              type="button"
+              onClick={() => supabase.auth.signOut()}
+              className="px-3 py-1.5 rounded-lg font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            >
+              Sign out
+            </button>
           </nav>
           </div>
         </div>
