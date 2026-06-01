@@ -36,14 +36,14 @@ export function CoachLauncher() {
     <>
       <button
         type="button"
-        aria-label="Open Coach chat"
+        aria-label="Open Your Personal Finance Friend chat"
         onClick={() => setOpen(!isOpen)}
         className="group fixed bottom-6 right-6 z-40 flex items-center justify-center rounded-full text-white shadow-lg cursor-pointer"
         style={{ width: 52, height: 52, backgroundColor: "#1a9c6e" }}
       >
         <MessageCircle className="h-6 w-6" />
         <span className="absolute right-full mr-3 px-2 py-1 rounded-md bg-neutral-900 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-          Coach
+          Your Personal Finance Friend
         </span>
       </button>
 
@@ -58,14 +58,14 @@ export function CoachLauncher() {
             ref={panelRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Coach chat"
+            aria-label="Your Personal Finance Friend chat"
             className="absolute right-0 top-0 h-full w-full sm:w-[440px] bg-white shadow-2xl border-l border-neutral-200 flex flex-col animate-in slide-in-from-right duration-200"
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
-              <h2 className="text-base font-semibold text-neutral-900">Coach</h2>
+              <h2 className="text-base font-semibold text-neutral-900">Your Personal Finance Friend</h2>
               <button
                 type="button"
-                aria-label="Close Coach chat"
+                aria-label="Close Your Personal Finance Friend chat"
                 onClick={() => setOpen(false)}
                 className="p-1.5 rounded-md hover:bg-neutral-100 cursor-pointer"
               >
