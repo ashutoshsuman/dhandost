@@ -56,10 +56,7 @@ function stripRepeatedPriorOpening(reply: string, previousMessages: CoachMessage
   return reply.trim();
 }
 
-const STARTERS = [
-  "How am I doing this month?",
-  "Which debt should I clear first?",
-];
+const STARTERS = ["How am I doing this month?", "Which debt should I clear first?"];
 
 export function CoachChat({
   autoFocus = false,
@@ -91,28 +88,22 @@ export function CoachChat({
     setMessages((m) => [...m, { role: "user", content: message }]);
     setPending(true);
     try {
-      const requestMessage = buildCoachRequestMessage(
-        message,
-        previousMessages.length > 0,
-      );
+      const requestMessage = buildCoachRequestMessage(message, previousMessages.length > 0);
       const { data, error } = await supabase.functions.invoke("financial-chat", {
         body: {
           conversation_id: conversationId,
           message: requestMessage,
         },
       });
-      if (error || !data || (data as any).error) {
+      const response = data as { error?: unknown; conversation_id?: string; reply?: string } | null;
+      if (error || !response || response.error) {
         setMessages((m) => [
           ...m,
           { role: "assistant", content: "Something went wrong — please try again." },
         ]);
       } else {
-        const d = data as { conversation_id?: string; reply?: string };
-        if (d.conversation_id) setConversationId(d.conversation_id);
-        const replyText = stripRepeatedPriorOpening(
-          d.reply ?? "",
-          previousMessages,
-        );
+        if (response.conversation_id) setConversationId(response.conversation_id);
+        const replyText = stripRepeatedPriorOpening(response.reply ?? "", previousMessages);
         setMessages((m) => [
           ...m,
           {
@@ -151,9 +142,7 @@ export function CoachChat({
       >
         {messages.length === 0 && !pending && (
           <div className="space-y-4 text-[15px]">
-            <p style={{ color: "#9aa5b1" }}>
-              Ask about your plan, spending, goals, or debts.
-            </p>
+            <p style={{ color: "#9aa5b1" }}>Ask about your plan, spending, goals, or debts.</p>
             <div className="flex flex-col gap-2 items-start">
               {STARTERS.map((s) => (
                 <button
