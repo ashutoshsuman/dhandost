@@ -133,6 +133,9 @@ export default function VariableSpendingTracker() {
         forecastSpend={data.forecast_total_month_end_spend}
         forecastVariance={data.forecast_total_variance}
         topRisk={data.top_risk_category}
+        skewedByOneOffs={
+          data.forecast_skewed_by_one_offs || data.implausible_overspend
+        }
       />
 
 
