@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { Layout } from "@/components/Layout";
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY, type Transaction } from "@/lib/supabase";
+import { supabase, type Transaction } from "@/lib/supabase";
+import { invokeFn } from "@/lib/invokeFn";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
@@ -300,15 +301,7 @@ function AddForm({ onClose, categories }: { onClose: () => void; categories: str
       // to finish so the category appears immediately on refresh.
       if (!cat) {
         try {
-          await fetch(`${SUPABASE_URL}/functions/v1/categorize-transactions`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            },
-            body: JSON.stringify({ limit: 10 }),
-          });
+          await invokeFn("categorize-transactions", { limit: 10 });
         } catch (e) {
           console.error("categorize-transactions failed", e);
         }

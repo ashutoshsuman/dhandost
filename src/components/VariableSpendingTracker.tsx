@@ -26,9 +26,7 @@ type InsightsResponse = {
   categories: CategoryRow[];
 };
 
-const URL =
-  "https://ibjsdafxjggjyamkdjeh.supabase.co/functions/v1/variable-spending-insights";
-const KEY = "sb_publishable_ztTyEdZPNNfk5PjttJimDg_-g3fmC0D";
+import { invokeFn } from "@/lib/invokeFn";
 
 function statusFor(actual: number, baseline: number, provided?: Status): Status {
   if (provided) return provided;
@@ -68,13 +66,7 @@ const statusStyles: Record<
 export default function VariableSpendingTracker() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["variable-spending-insights"],
-    queryFn: async () => {
-      const res = await fetch(URL, {
-        headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as InsightsResponse;
-    },
+    queryFn: () => invokeFn<InsightsResponse>("variable-spending-insights"),
     retry: false,
   });
 

@@ -5,7 +5,8 @@ import { Layout } from "@/components/Layout";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import SecureUploadPanel from "@/components/SecureUploadPanel";
 
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+import { invokeFn } from "@/lib/invokeFn";
 import { formatINR } from "@/lib/format";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -141,17 +142,9 @@ function ImportPage() {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       setRows([]); setHeaders([]); setFileName("");
       // fire-and-forget AI categorization of newly imported rows
-      fetch(`${SUPABASE_URL}/functions/v1/categorize-transactions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ limit: 500 }),
-      })
+      invokeFn("categorize-transactions", { limit: 500 })
         .then(() => qc.invalidateQueries({ queryKey: ["transactions"] }))
-        .catch(console.error);
+        .catch((e) => console.error("categorize-transactions failed", e));
     },
   });
 

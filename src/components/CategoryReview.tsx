@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+import { invokeFn } from "@/lib/invokeFn";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 
 type Txn = {
@@ -50,24 +51,11 @@ async function fetchCategories(): Promise<string[]> {
 }
 
 async function saveCorrection(transactionId: string, category: string) {
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/learn-category-rule`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({
-      transaction_id: transactionId,
-      category,
-      apply_to_existing: true,
-    }),
+  return invokeFn("learn-category-rule", {
+    transaction_id: transactionId,
+    category,
+    apply_to_existing: true,
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || "Failed to save category");
-  }
-  return res.json();
 }
 
 export function CategoryEditor({

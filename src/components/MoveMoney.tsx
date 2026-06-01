@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Goal } from "@/lib/supabase";
+import { invokeFn } from "@/lib/invokeFn";
+
 
 function formatINR(n: number | string | null | undefined, currency = "₹") {
   return `${currency}${Math.round(Math.abs(Number(n) || 0)).toLocaleString("en-IN")}`;
@@ -55,13 +57,16 @@ export default function MoveMoney({ goals = [], onMoved, currency = "₹" }: Pro
 
     setBusy(true);
     try {
-      const res = await fetch(`/api/public/move-goal-funds`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ from_goal_id: fromId, to_goal_id: toId, amount: amt }),
+      const data = await invokeFn<{
+        actually_moved?: number;
+        capped?: boolean;
+        from: { name: string };
+        to: { name: string };
+      }>("move-goal-funds", {
+        from_goal_id: fromId,
+        to_goal_id: toId,
+        amount: amt,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Move failed");
       const moved = data.actually_moved ?? amt;
       const capNote = data.capped
         ? ` (capped to ${formatINR(moved, currency)} — destination near its target)`
