@@ -1,9 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Loader2, TrendingDown, TrendingUp, Minus, AlertTriangle, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, TrendingDown, TrendingUp, Minus, CheckCircle2 } from "lucide-react";
 import { formatINR } from "@/lib/format";
 import { fetchThreePaths, storePathsResponse } from "@/lib/three-paths";
+import {
+  beginRecoveryPlanFlow,
+  isRecoveryPlanActiveThisMonth,
+} from "@/lib/recovery-plan";
 
 type Status = "under" | "within" | "over";
 
@@ -23,6 +27,8 @@ type InsightsResponse = {
   top_risk_category?: string | null;
   forecast_total_month_end_spend?: number;
   forecast_total_variance?: number;
+  forecast_skewed_by_one_offs?: boolean;
+  implausible_overspend?: boolean;
   categories: CategoryRow[];
 };
 
