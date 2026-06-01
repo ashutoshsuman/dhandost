@@ -58,9 +58,11 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <CoachProvider>
-        <Outlet />
-      </CoachProvider>
+      <AuthGate>
+        <CoachProvider>
+          <Outlet />
+        </CoachProvider>
+      </AuthGate>
     </QueryClientProvider>
   );
 }
