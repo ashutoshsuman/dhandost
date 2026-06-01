@@ -56,23 +56,12 @@ type PlanResponse = {
   computed_at: string;
 };
 
-const PLAN_URL =
-  "https://ibjsdafxjggjyamkdjeh.supabase.co/functions/v1/hyper-action";
-const PUBLISHABLE_KEY = "sb_publishable_ztTyEdZPNNfk5PjttJimDg_-g3fmC0D";
+import { invokeFn } from "@/lib/invokeFn";
 
 function LivePlan() {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["compute-plan"],
-    queryFn: async () => {
-      const res = await fetch(PLAN_URL, {
-        headers: {
-          apikey: PUBLISHABLE_KEY,
-          Authorization: `Bearer ${PUBLISHABLE_KEY}`,
-        },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as PlanResponse;
-    },
+    queryFn: () => invokeFn<PlanResponse>("hyper-action"),
   });
 
   const { data: completedGoals } = useQuery({
