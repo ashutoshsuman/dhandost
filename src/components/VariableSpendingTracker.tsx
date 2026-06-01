@@ -1,9 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Loader2, TrendingDown, TrendingUp, Minus, AlertTriangle, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, TrendingDown, TrendingUp, Minus, CheckCircle2 } from "lucide-react";
 import { formatINR } from "@/lib/format";
 import { fetchThreePaths, storePathsResponse } from "@/lib/three-paths";
+import {
+  beginRecoveryPlanFlow,
+  isRecoveryPlanActiveThisMonth,
+} from "@/lib/recovery-plan";
 
 type Status = "under" | "within" | "over";
 
@@ -23,6 +27,8 @@ type InsightsResponse = {
   top_risk_category?: string | null;
   forecast_total_month_end_spend?: number;
   forecast_total_variance?: number;
+  forecast_skewed_by_one_offs?: boolean;
+  implausible_overspend?: boolean;
   categories: CategoryRow[];
 };
 
@@ -127,6 +133,9 @@ export default function VariableSpendingTracker() {
         forecastSpend={data.forecast_total_month_end_spend}
         forecastVariance={data.forecast_total_variance}
         topRisk={data.top_risk_category}
+        skewedByOneOffs={
+          data.forecast_skewed_by_one_offs || data.implausible_overspend
+        }
       />
 
 
@@ -242,14 +251,24 @@ function ForecastCard({
   forecastSpend,
   forecastVariance,
   topRisk,
+  skewedByOneOffs,
 }: {
   forecastSpend?: number;
   forecastVariance?: number;
   topRisk?: string | null;
+  skewedByOneOffs?: boolean;
 }) {
   const navigate = useNavigate();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [planActive, setPlanActive] = useState(false);
+
+  useEffect(() => {
+    setPlanActive(isRecoveryPlanActiveThisMonth());
+    const onFocus = () => setPlanActive(isRecoveryPlanActiveThisMonth());
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
 
   if (forecastSpend == null && forecastVariance == null) return null;
 
@@ -260,6 +279,7 @@ function ForecastCard({
     setGenerating(true);
     setError(null);
     try {
+      beginRecoveryPlanFlow();
       const resp = await fetchThreePaths({
         trigger_type: "drift_correction",
         trigger_amount: variance,
@@ -283,45 +303,58 @@ function ForecastCard({
         <Stat
           label="Projected Overspend"
           value={overspend ? formatINR(variance) : formatINR(0)}
-          accentClass={overspend ? "text-debit" : "text-success"}
+          accentClass={overspend ? "text-warning" : "text-success"}
         />
         <Stat
           label="Risk Driver"
           value={topRisk || "—"}
-          accentClass={topRisk ? "text-debit" : undefined}
+          accentClass={topRisk ? "text-warning" : undefined}
         />
       </div>
 
-      {overspend && (
-        <div className="rounded-xl border border-debit/30 bg-debit/5 p-4 space-y-3">
-          <div className="flex items-start gap-2 text-sm text-debit">
-            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-            <p>
-              At your current pace you may overspend by{" "}
-              <span className="font-semibold tabular-nums">
-                {formatINR(variance)}
-              </span>{" "}
-              this month.
-            </p>
+      {overspend && planActive && (
+        <div className="rounded-xl border border-success/30 bg-success/5 p-4 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-start gap-2 text-sm text-success">
+            <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+            <p>A recovery plan is in action to get you back on track.</p>
           </div>
+          <button
+            disabled
+            className="inline-flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 text-success text-sm font-medium px-3 py-2 opacity-90 cursor-not-allowed"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Plan active
+          </button>
+        </div>
+      )}
+
+      {overspend && !planActive && (
+        <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 space-y-3">
+          <p className="text-sm text-foreground">
+            You&apos;re trending{" "}
+            <span className="font-semibold tabular-nums text-warning">
+              {formatINR(variance)}
+            </span>{" "}
+            over your baseline this month. A recovery plan can help you get back on track.
+          </p>
+          {skewedByOneOffs && (
+            <p className="text-xs text-muted-foreground">
+              Note: this forecast includes one-off transactions that may not repeat. Your actual month-end spend is likely lower.
+            </p>
+          )}
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="inline-flex items-center gap-2 rounded-lg bg-debit text-white text-sm font-medium px-3 py-2 hover:bg-debit/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-lg border border-success/50 bg-transparent text-success text-sm font-medium px-3 py-2 hover:bg-success/10 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
-            {generating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
-            )}
-            {generating ? "Generating…" : "Generate Recovery Plan"}
+            {generating && <Loader2 className="h-4 w-4 animate-spin" />}
+            {generating ? "Generating…" : "Get back on track"}
           </button>
-          {error && (
-            <p className="text-xs text-debit">{error}</p>
-          )}
+          {error && <p className="text-xs text-debit">{error}</p>}
         </div>
       )}
     </div>
   );
 }
+
 

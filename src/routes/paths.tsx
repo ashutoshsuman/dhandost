@@ -15,6 +15,10 @@ import {
   type PathOption,
   type ThreePathsResponse,
 } from "@/lib/three-paths";
+import {
+  consumeRecoveryPlanFlow,
+  markRecoveryPlanActiveThisMonth,
+} from "@/lib/recovery-plan";
 
 function formatINR(n: number): string {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -208,6 +212,12 @@ function PathsPage() {
         // Hide "Help me with a plan" for this transaction going forward.
         if (data.trigger_transaction_id) {
           markPlanAppliedForTx(data.trigger_transaction_id);
+        }
+
+        // If this apply originated from the Variable Spending Tracker's
+        // recovery-plan flow, lock the recovery card for the rest of the month.
+        if (consumeRecoveryPlanFlow()) {
+          markRecoveryPlanActiveThisMonth();
         }
       } else {
         const { error } = await supabase.from("path_selections").insert({
