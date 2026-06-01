@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { CoachProvider } from "@/components/coach/CoachContext";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -56,7 +57,9 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <CoachProvider>
+        <Outlet />
+      </CoachProvider>
     </QueryClientProvider>
   );
 }

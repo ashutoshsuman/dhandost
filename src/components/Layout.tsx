@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import logo from "@/assets/dhandost-logo.png";
 import { supabase } from "@/lib/supabase";
 import { TrustBadge } from "@/components/TrustBadge";
+import { CoachLauncher } from "@/components/coach/CoachLauncher";
+import { useRouterState as _useRS } from "@tanstack/react-router";
 
 
 const nav = [
