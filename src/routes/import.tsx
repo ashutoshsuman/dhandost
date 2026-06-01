@@ -5,7 +5,8 @@ import { Layout } from "@/components/Layout";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import SecureUploadPanel from "@/components/SecureUploadPanel";
 
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+import { invokeFn } from "@/lib/invokeFn";
 import { formatINR } from "@/lib/format";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
