@@ -48,9 +48,13 @@ export function CoachChat({
       } else {
         const d = data as { conversation_id?: string; reply?: string };
         if (d.conversation_id) setConversationId(d.conversation_id);
+        const replyText = (d.reply ?? "").trim();
         setMessages((m) => [
           ...m,
-          { role: "assistant", content: d.reply ?? "Something went wrong — please try again." },
+          {
+            role: "assistant",
+            content: replyText || "Something went wrong — please try again.",
+          },
         ]);
       }
     } catch {
