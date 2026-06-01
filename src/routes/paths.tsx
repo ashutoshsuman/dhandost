@@ -198,20 +198,11 @@ function PathsPage() {
         if (!data?.path_selection_id) {
           throw new Error("Missing plan reference — please regenerate the plan.");
         }
-        // Grab the user's access token if signed in; falls back to publishable key.
-        let accessToken: string | null = null;
-        try {
-          const { data: sessionData } = await supabase.auth.getSession();
-          accessToken = sessionData.session?.access_token ?? null;
-        } catch {
-          accessToken = null;
-        }
         await applyPath({
           path_selection_id: data.path_selection_id,
           chosen_path_label: path.label,
           chosen_index: index,
           priority_value: path.priority_value ?? null,
-          access_token: accessToken,
         });
 
         // Hide "Help me with a plan" for this transaction going forward.
