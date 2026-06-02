@@ -114,14 +114,6 @@ function matchGoal(goals: Goal[], target: string): Goal | undefined {
     goals.find((g) => t.includes(g.name?.toLowerCase() ?? ""))
   );
 }
-function matchDebt(debts: Debt[], target: string): Debt | undefined {
-  const t = (target || "").toLowerCase();
-  return (
-    debts.find((d) => d.name?.toLowerCase() === t) ||
-    debts.find((d) => d.name?.toLowerCase().includes(t)) ||
-    debts.find((d) => t.includes(d.name?.toLowerCase() ?? ""))
-  );
-}
 
 async function applyAllocations(steps: AllocationStep[]) {
   if (!steps?.length) return;
