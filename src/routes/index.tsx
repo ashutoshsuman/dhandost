@@ -206,6 +206,13 @@ function LivePlan() {
       {/* Active Commitments */}
       {data.active_commitments && data.active_commitments.length > 0 ? (
         (() => {
+          const debtCommitments = data.active_commitments!.filter(
+            (c) => c.commitment_type === "debt_paydown",
+          );
+          const otherCommitments = data.active_commitments!.filter(
+            (c) => c.commitment_type !== "debt_paydown",
+          );
+
           const groups = new Map<string, {
             type: "reduce_discretionary" | "delay_goal";
             category?: string;
@@ -216,7 +223,7 @@ function LivePlan() {
             count: number;
             latest_ends_at?: string;
           }>();
-          for (const c of data.active_commitments!) {
+          for (const c of otherCommitments) {
             const isReduce = c.commitment_type === "reduce_discretionary";
             const key = isReduce
               ? `reduce|${c.category ?? ""}`
@@ -242,13 +249,14 @@ function LivePlan() {
             }
           }
           const grouped = Array.from(groups.values());
+          const totalCount = grouped.length + debtCommitments.length;
           return (
             <section className="space-y-3">
               <div>
                 <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
                   Active Commitments
                   <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                    {grouped.length}
+                    {totalCount}
                   </span>
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -257,15 +265,31 @@ function LivePlan() {
               </div>
 
               {/* Cash flow improvement banner */}
-              <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
-                <TrendingUp className="h-4 w-4 text-success shrink-0" />
-                <p className="text-sm text-foreground">
-                  Your active commitments are improving your monthly cash flow by{" "}
-                  <span className="font-semibold text-success">
-                    {formatINR(data.total_committed_reductions ?? 0)}/mo
-                  </span>
-                </p>
-              </div>
+              {(data.total_committed_reductions ?? 0) > 0 && (
+                <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
+                  <TrendingUp className="h-4 w-4 text-success shrink-0" />
+                  <p className="text-sm text-foreground">
+                    Your active commitments are improving your monthly cash flow by{" "}
+                    <span className="font-semibold text-success">
+                      {formatINR(data.total_committed_reductions ?? 0)}/mo
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {/* Debt paydown cards (pending + confirmed) */}
+              {debtCommitments.length > 0 && (
+                <div className="space-y-3">
+                  {debtCommitments.map((c) => (
+                    <DebtPaydownCard
+                      key={c.id ?? `${c.debt_id}-${c.confirmed_at ?? "pending"}`}
+                      commitment={c}
+                      debt={debtsList?.find((d) => d.id === c.debt_id)}
+                      onConfirmed={() => refetch()}
+                    />
+                  ))}
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 {grouped.map((g, i) => {
