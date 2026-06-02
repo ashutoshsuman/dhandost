@@ -177,16 +177,8 @@ async function applyAllocations(steps: AllocationStep[]) {
     if (error) throw error;
   }
 
-  // Apply debt paydowns
-  for (const [id, delta] of debtPays) {
-    const d = debts.find((x) => x.id === id)!;
-    const next = Math.max(0, Number(d.current_balance ?? 0) - delta);
-    const { error } = await supabase
-      .from("debts")
-      .update({ current_balance: next })
-      .eq("id", id);
-    if (error) throw error;
-  }
+  // Debt paydowns are intentionally not applied here — they are recorded as
+  // pending commitments by the backend and confirmed later by the user.
 
   // Push target dates forward for delay_goal steps
   for (const [id, months] of goalDelayMonths) {
