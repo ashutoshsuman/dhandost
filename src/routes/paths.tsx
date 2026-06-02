@@ -126,16 +126,13 @@ function matchDebt(debts: Debt[], target: string): Debt | undefined {
 async function applyAllocations(steps: AllocationStep[]) {
   if (!steps?.length) return;
 
-  const [{ data: goalsRaw }, { data: debtsRaw }] = await Promise.all([
+  const [{ data: goalsRaw }] = await Promise.all([
     supabase.from("goals").select("id,name,current_amount,target_date"),
-    supabase.from("debts").select("id,name,current_balance"),
   ]);
   const goals = (goalsRaw ?? []) as Goal[];
-  const debts = (debtsRaw ?? []) as Debt[];
 
   // Aggregate per-target deltas to keep writes atomic-ish and avoid duplicates.
   const goalAdds = new Map<string, number>();
-  const debtPays = new Map<string, number>();
   const goalDelayMonths = new Map<string, number>();
 
   for (const step of steps) {
