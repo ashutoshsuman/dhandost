@@ -17,12 +17,21 @@ export type GoalImpact = {
 
 export type DiscretionaryImpact = number | null;
 
+export type DebtImpact = {
+  debt_id?: string;
+  debt_name: string;
+  current_balance?: number;
+  new_balance: number;
+  interest_rate_annual?: number;
+};
+
 export type PathOption = {
   label: string;
   description: string;
   priority_value?: string;
   allocation: AllocationStep[];
   goal_impacts: GoalImpact[];
+  debt_impact?: DebtImpact[];
   discretionary_impact?: DiscretionaryImpact;
 };
 
