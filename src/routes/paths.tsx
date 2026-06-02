@@ -12,6 +12,7 @@ import {
   markPlanAppliedForTx,
   readPathsResponse,
   type AllocationStep,
+  type DebtImpact,
   type PathOption,
   type ThreePathsResponse,
 } from "@/lib/three-paths";
@@ -24,7 +25,20 @@ function formatINR(n: number): string {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
 }
 
-function renderAllocation(a: AllocationStep): string {
+function matchDebtImpact(
+  impacts: DebtImpact[] | undefined,
+  target: string,
+): DebtImpact | undefined {
+  if (!impacts?.length) return undefined;
+  const t = (target || "").toLowerCase();
+  return (
+    impacts.find((d) => d.debt_name?.toLowerCase() === t) ||
+    impacts.find((d) => d.debt_name?.toLowerCase().includes(t)) ||
+    impacts.find((d) => t.includes(d.debt_name?.toLowerCase() ?? ""))
+  );
+}
+
+function renderAllocation(a: AllocationStep, debtImpacts?: DebtImpact[]): string {
   switch (a.action) {
     case "reduce_discretionary": {
       const monthly = a.monthly_amount ?? 0;
@@ -39,8 +53,17 @@ function renderAllocation(a: AllocationStep): string {
       return `→ Delay ${a.target}`;
     case "keep_flexible":
       return `→ ${formatINR(a.amount)} kept as flexible buffer`;
-    case "pay_down_debt":
-      return `→ ${formatINR(a.amount)} toward ${a.target} (debt)`;
+    case "pay_down_debt": {
+      const impact = matchDebtImpact(debtImpacts, a.target);
+      const name = impact?.debt_name ?? a.target;
+      const wouldBe =
+        impact?.new_balance ??
+        Math.max(0, (impact?.current_balance ?? 0) - (a.amount ?? 0));
+      const rate = impact?.interest_rate_annual;
+      const ratePart =
+        rate != null ? ` @ ${Number(rate).toFixed(rate % 1 === 0 ? 0 : 2)}% p.a.` : "";
+      return `→ ${formatINR(a.amount)} toward ${name}. New balance would be ${formatINR(wouldBe)}${ratePart}`;
+    }
     case "topup_cushion":
       return `→ ${formatINR(a.amount)} into ${a.target}`;
     case "fund_goal":
@@ -48,6 +71,7 @@ function renderAllocation(a: AllocationStep): string {
       return `→ ${formatINR(a.amount)} into ${a.target}`;
   }
 }
+
 
 
 export const Route = createFileRoute("/paths")({
