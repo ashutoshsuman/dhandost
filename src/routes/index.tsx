@@ -643,3 +643,142 @@ function statusStyles(s: string): { bg: string; fg: string } {
     return { bg: "oklch(0.95 0.04 80)", fg: "oklch(0.52 0.09 75)" };
   return { bg: "oklch(0.94 0.04 160)", fg: "oklch(0.45 0.08 160)" };
 }
+
+type DebtRef = {
+  id: string;
+  name: string;
+  interest_rate_annual: number | null;
+} | undefined;
+
+function fmtRupees(n: number | null | undefined): string {
+  const v = Math.round(Number(n ?? 0));
+  return `₹${v.toLocaleString("en-IN")}`;
+}
+
+function fmtRate(rate: number | null | undefined): string {
+  if (rate == null || isNaN(Number(rate))) return "";
+  const r = Number(rate);
+  return ` @ ${r % 1 === 0 ? r.toFixed(0) : r.toFixed(2)}% p.a.`;
+}
+
+function fmtDMY(d: string | null | undefined): string {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return "";
+  return dt.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function DebtPaydownCard({
+  commitment,
+  debt,
+  onConfirmed,
+}: {
+  commitment: ActiveCommitment;
+  debt: DebtRef;
+  onConfirmed: () => void;
+}) {
+  const qc = useQueryClient();
+  const name = commitment.debt_name ?? debt?.name ?? "this debt";
+  const rate = commitment.interest_rate_annual ?? debt?.interest_rate_annual ?? null;
+  const amount = commitment.paydown_amount ?? 0;
+  const before = commitment.balance_before ?? 0;
+  const after = commitment.balance_after ?? Math.max(0, before - amount);
+  const isConfirmed = commitment.status === "confirmed";
+
+  const confirm = useMutation({
+    mutationFn: async () => {
+      if (!commitment.id) throw new Error("Missing commitment id");
+      const { data, error } = await supabase.functions.invoke(
+        "confirm-debt-paydown",
+        { body: { commitment_id: commitment.id } },
+      );
+      if (error) {
+        console.error("confirm-debt-paydown failed:", error);
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: async () => {
+      toast("Payment confirmed — debt balance updated.");
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["debts"] }),
+        qc.invalidateQueries({ queryKey: ["compute-plan"] }),
+      ]);
+      onConfirmed();
+    },
+    onError: (err) => {
+      toast.error((err as Error).message || "Couldn't confirm payment");
+    },
+  });
+
+  if (isConfirmed) {
+    return (
+      <div className="rounded-lg border border-success/30 bg-success/5 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/15">
+            <CheckCircle2 className="h-4 w-4 text-success" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-medium text-foreground">
+                {name} — payment confirmed
+              </p>
+              <span className="inline-flex items-center rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success">
+                Done
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {fmtRupees(amount)} paid toward {name}
+              {commitment.confirmed_at ? ` on ${fmtDMY(commitment.confirmed_at)}` : ""}.
+              <br />
+              Balance {fmtRupees(before)} → {fmtRupees(after)}{fmtRate(rate)}.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/60">
+          <Banknote className="h-4 w-4 text-foreground" />
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <p className="text-sm font-medium text-foreground">
+            Pay down {name}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {fmtRupees(amount)} earmarked toward {name}.
+            <br />
+            Current balance {fmtRupees(before)}{fmtRate(rate)}.
+            <br />
+            Mark as paid once you&apos;ve made the payment to update your balance.
+          </p>
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => confirm.mutate()}
+              disabled={confirm.isPending || !commitment.id}
+              className="inline-flex items-center gap-1.5 rounded-md bg-success px-3 py-1.5 text-sm font-medium text-success-foreground hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity cursor-pointer"
+            >
+              {confirm.isPending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Confirming…
+                </>
+              ) : (
+                "Mark as paid"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
