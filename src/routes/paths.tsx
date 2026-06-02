@@ -152,10 +152,10 @@ async function applyAllocations(steps: AllocationStep[]) {
       if (!g) continue;
       goalAdds.set(g.id, (goalAdds.get(g.id) ?? 0) + amount);
     } else if (action === "pay_down_debt") {
-      if (amount <= 0) continue;
-      const d = matchDebt(debts, step.target);
-      if (!d) continue;
-      debtPays.set(d.id, (debtPays.get(d.id) ?? 0) + amount);
+      // Intentionally do NOT reduce debt balance here. The backend's apply-path
+      // logs this as a pending debt_paydown commitment. The user reduces the
+      // balance later by confirming the payment via confirm-debt-paydown.
+      continue;
     } else if (action === "delay_goal") {
       const g = matchGoal(goals, step.target);
       if (!g) continue;
