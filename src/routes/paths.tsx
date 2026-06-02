@@ -347,7 +347,7 @@ function PathCard({
           <ul className="space-y-1 text-sm">
             {path.allocation.map((a, i) => (
               <li key={i} className="tabular-nums">
-                {renderAllocation(a)}
+                {renderAllocation(a, path.debt_impact)}
               </li>
             ))}
           </ul>
