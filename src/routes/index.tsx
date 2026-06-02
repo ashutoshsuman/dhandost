@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper, Lightbulb, ArrowRight, TrendingDown, Clock, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
+import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper, Lightbulb, ArrowRight, TrendingDown, Clock, TrendingUp, Banknote } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
