@@ -106,6 +106,24 @@ function LivePlan() {
     },
   });
 
+  const { data: debtsList } = useQuery({
+    queryKey: ["debts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("debts")
+        .select("id,name,interest_rate_annual,balance,current_balance");
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        name: string;
+        interest_rate_annual: number | null;
+        balance?: number | null;
+        current_balance?: number | null;
+      }>;
+    },
+  });
+
+
   if (isLoading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
