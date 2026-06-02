@@ -99,7 +99,7 @@ type Goal = {
   current_amount: number | null;
   target_date: string | null;
 };
-type Debt = { id: string; name: string; current_balance: number };
+
 
 function safeNum(n: unknown): number {
   const v = Number(n);
