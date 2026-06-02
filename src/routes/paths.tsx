@@ -99,7 +99,7 @@ type Goal = {
   current_amount: number | null;
   target_date: string | null;
 };
-type Debt = { id: string; name: string; current_balance: number };
+
 
 function safeNum(n: unknown): number {
   const v = Number(n);
@@ -114,28 +114,17 @@ function matchGoal(goals: Goal[], target: string): Goal | undefined {
     goals.find((g) => t.includes(g.name?.toLowerCase() ?? ""))
   );
 }
-function matchDebt(debts: Debt[], target: string): Debt | undefined {
-  const t = (target || "").toLowerCase();
-  return (
-    debts.find((d) => d.name?.toLowerCase() === t) ||
-    debts.find((d) => d.name?.toLowerCase().includes(t)) ||
-    debts.find((d) => t.includes(d.name?.toLowerCase() ?? ""))
-  );
-}
 
 async function applyAllocations(steps: AllocationStep[]) {
   if (!steps?.length) return;
 
-  const [{ data: goalsRaw }, { data: debtsRaw }] = await Promise.all([
+  const [{ data: goalsRaw }] = await Promise.all([
     supabase.from("goals").select("id,name,current_amount,target_date"),
-    supabase.from("debts").select("id,name,current_balance"),
   ]);
   const goals = (goalsRaw ?? []) as Goal[];
-  const debts = (debtsRaw ?? []) as Debt[];
 
   // Aggregate per-target deltas to keep writes atomic-ish and avoid duplicates.
   const goalAdds = new Map<string, number>();
-  const debtPays = new Map<string, number>();
   const goalDelayMonths = new Map<string, number>();
 
   for (const step of steps) {
@@ -152,10 +141,10 @@ async function applyAllocations(steps: AllocationStep[]) {
       if (!g) continue;
       goalAdds.set(g.id, (goalAdds.get(g.id) ?? 0) + amount);
     } else if (action === "pay_down_debt") {
-      if (amount <= 0) continue;
-      const d = matchDebt(debts, step.target);
-      if (!d) continue;
-      debtPays.set(d.id, (debtPays.get(d.id) ?? 0) + amount);
+      // Intentionally do NOT reduce debt balance here. The backend's apply-path
+      // logs this as a pending debt_paydown commitment. The user reduces the
+      // balance later by confirming the payment via confirm-debt-paydown.
+      continue;
     } else if (action === "delay_goal") {
       const g = matchGoal(goals, step.target);
       if (!g) continue;
@@ -177,16 +166,8 @@ async function applyAllocations(steps: AllocationStep[]) {
     if (error) throw error;
   }
 
-  // Apply debt paydowns
-  for (const [id, delta] of debtPays) {
-    const d = debts.find((x) => x.id === id)!;
-    const next = Math.max(0, Number(d.current_balance ?? 0) - delta);
-    const { error } = await supabase
-      .from("debts")
-      .update({ current_balance: next })
-      .eq("id", id);
-    if (error) throw error;
-  }
+  // Debt paydowns are intentionally not applied here — they are recorded as
+  // pending commitments by the backend and confirmed later by the user.
 
   // Push target dates forward for delay_goal steps
   for (const [id, months] of goalDelayMonths) {
