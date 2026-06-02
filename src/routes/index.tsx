@@ -31,7 +31,9 @@ type PlanGoal = {
 };
 
 type ActiveCommitment = {
-  commitment_type?: "reduce_discretionary" | "delay_goal";
+  id?: string;
+  commitment_type?: "reduce_discretionary" | "delay_goal" | "debt_paydown";
+  status?: "pending" | "confirmed" | string;
   goal_name?: string;
   goal_id?: string;
   category?: string;
@@ -39,7 +41,17 @@ type ActiveCommitment = {
   duration_months?: number;
   delay_weeks?: number;
   ends_at?: string;
+  // Debt paydown fields
+  debt_id?: string;
+  debt_name?: string;
+  paydown_amount?: number;
+  balance_before?: number;
+  balance_after?: number;
+  confirmed_at?: string;
+  interest_rate_annual?: number;
 };
+
+
 
 
 type PlanResponse = {
