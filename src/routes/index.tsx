@@ -231,12 +231,6 @@ function LivePlan() {
 
       {/* Active Commitments */}
       {(() => {
-        const allCommitments = [
-          ...(data.active_commitments ?? []),
-          ...(extraCommitments ?? []).filter(
-            (ec) => !(data.active_commitments ?? []).some((ac) => ac.id === ec.id),
-          ),
-        ];
         if (allCommitments.length === 0) {
           return (
             <section className="space-y-3">
@@ -311,7 +305,7 @@ function LivePlan() {
           }
         }
         const grouped = Array.from(groups.values());
-        const totalCount = grouped.length + debtCommitments.length;
+        const totalCount = allCommitments.length;
         return (
           <section className="space-y-3">
             <div>
@@ -327,13 +321,13 @@ function LivePlan() {
             </div>
 
             {/* Cash flow improvement banner */}
-            {(data.total_committed_reductions ?? 0) > 0 && (
+            {committedMonthlyImprovement > 0 && (
               <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
                 <TrendingUp className="h-4 w-4 text-success shrink-0" />
                 <p className="text-sm text-foreground">
                   Your active commitments are improving your monthly cash flow by{" "}
                   <span className="font-semibold text-success">
-                    {formatINR(data.total_committed_reductions ?? 0)}/mo
+                    {formatINR(committedMonthlyImprovement)}/mo
                   </span>
                 </p>
               </div>
