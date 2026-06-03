@@ -123,6 +123,23 @@ function LivePlan() {
     },
   });
 
+  // Fetch debt paydown commitments that the hyper-action edge function does
+  // not return because it filters to status = 'active' only. Pending and
+  // confirmed debt paydowns must also appear in the active list.
+  const { data: extraCommitments } = useQuery({
+    queryKey: ["commitments", "pending-confirmed"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("commitments")
+        .select("*")
+        .eq("commitment_type", "debt_paydown")
+        .in("status", ["pending", "confirmed"]);
+      if (error) throw error;
+      return (data ?? []) as ActiveCommitment[];
+    },
+  });
+
+
 
   if (isLoading) {
     return (
