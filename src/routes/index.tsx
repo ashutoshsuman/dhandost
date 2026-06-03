@@ -221,14 +221,19 @@ function LivePlan() {
       </section>
 
       {/* Active Commitments */}
-      {data.active_commitments && data.active_commitments.length > 0 ? (
-        (() => {
-          const debtCommitments = data.active_commitments!.filter(
-            (c) => c.commitment_type === "debt_paydown",
-          );
-          const otherCommitments = data.active_commitments!.filter(
-            (c) => c.commitment_type !== "debt_paydown",
-          );
+      {(() => {
+        const allCommitments = [
+          ...(data.active_commitments ?? []),
+          ...(extraCommitments ?? []).filter(
+            (ec) => !(data.active_commitments ?? []).some((ac) => ac.id === ec.id),
+          ),
+        ];
+        const debtCommitments = allCommitments.filter(
+          (c) => c.commitment_type === "debt_paydown",
+        );
+        const otherCommitments = allCommitments.filter(
+          (c) => c.commitment_type !== "debt_paydown",
+        );
 
           const groups = new Map<string, {
             type: "reduce_discretionary" | "delay_goal";
