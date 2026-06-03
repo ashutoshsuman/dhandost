@@ -675,6 +675,8 @@ type DebtRef = {
   id: string;
   name: string;
   interest_rate_annual: number | null;
+  balance?: number | null;
+  current_balance?: number | null;
 } | undefined;
 
 function fmtRupees(n: number | null | undefined): string {
@@ -709,10 +711,14 @@ function DebtPaydownCard({
   onConfirmed: () => void;
 }) {
   const qc = useQueryClient();
-  const name = commitment.debt_name ?? debt?.name ?? "this debt";
-  const rate = commitment.interest_rate_annual ?? debt?.interest_rate_annual ?? null;
+  const name = debt?.name ?? commitment.debt_name ?? "this debt";
+  const rate = debt?.interest_rate_annual ?? commitment.interest_rate_annual ?? null;
   const amount = commitment.paydown_amount ?? 0;
-  const before = commitment.balance_before ?? 0;
+  const before =
+    commitment.balance_before ??
+    debt?.current_balance ??
+    debt?.balance ??
+    0;
   const after = commitment.balance_after ?? Math.max(0, before - amount);
   const isConfirmed = commitment.status === "confirmed";
 
