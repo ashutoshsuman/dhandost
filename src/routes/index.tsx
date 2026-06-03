@@ -675,6 +675,8 @@ type DebtRef = {
   id: string;
   name: string;
   interest_rate_annual: number | null;
+  balance?: number | null;
+  current_balance?: number | null;
 } | undefined;
 
 function fmtRupees(n: number | null | undefined): string {
