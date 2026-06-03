@@ -113,11 +113,11 @@ function LivePlan() {
   });
 
   const { data: debtsList } = useQuery({
-    queryKey: ["debts"],
+    queryKey: ["debts-for-commitments"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("debts")
-        .select("id,name,interest_rate_annual,balance,current_balance");
+        .select("id,name,interest_rate_annual,balance");
       if (error) throw error;
       return (data ?? []) as Array<{
         id: string;
@@ -163,7 +163,18 @@ function LivePlan() {
       const merged: ActiveCommitment[] = viewRows.map((v) => {
         if (v.commitment_type !== "debt_paydown" || !v.id) return v;
         const extra = debtById.get(v.id);
-        return extra ? { ...extra, ...v, debt_id: v.debt_id ?? extra.debt_id } : v;
+        return extra
+          ? {
+              ...extra,
+              ...v,
+              debt_id: v.debt_id ?? extra.debt_id,
+              debt_name: v.debt_name ?? extra.debt_name,
+              interest_rate_annual:
+                v.interest_rate_annual ?? extra.interest_rate_annual,
+              balance_before: v.balance_before ?? extra.balance_before,
+              balance_after: v.balance_after ?? extra.balance_after,
+            }
+          : v;
       });
       // Include any debt_paydown rows that exist only in the source table.
       const viewIds = new Set(viewRows.map((r) => r.id).filter(Boolean));
