@@ -813,6 +813,14 @@ function DebtPaydownCard({
     );
   }
 
+  const liveBalance = Math.max(
+    0,
+    Number(debt?.balance ?? debt?.current_balance ?? before) || 0,
+  );
+  const projected = Math.max(0, liveBalance - amount);
+  const overSized = amount > liveBalance;
+  const rateSuffix = rate != null ? ` @ ${rate}% p.a.` : "";
+
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-start gap-3">
@@ -823,9 +831,18 @@ function DebtPaydownCard({
           <p className="text-sm font-medium text-foreground">Pay down {name}</p>
           <p className="text-sm text-muted-foreground">
             {fmtRupees(amount)} earmarked toward {name}.
+            {overSized ? (
+              <>
+                <br />
+                Only {fmtRupees(liveBalance)} is currently owed, so this payment will clear the balance.
+              </>
+            ) : null}
             <br />
-            Current balance {fmtRupees(before)}
-            {fmtRate(rate)}.
+            Current balance {fmtRupees(liveBalance)}{rateSuffix}.
+            <br />
+            {projected === 0
+              ? "After this payment: ₹0 — fully paid off."
+              : `After this payment: ${fmtRupees(projected)}${rateSuffix}.`}
             <br />
             Mark as paid once you&apos;ve made the payment to update your balance.
           </p>
