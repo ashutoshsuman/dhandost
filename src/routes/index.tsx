@@ -132,12 +132,31 @@ function LivePlan() {
   const { data: activeCommitments } = useQuery({
     queryKey: ["active-commitments"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("active_commitments")
-        .select("*")
-        .in("status", ["active", "pending", "confirmed"]);
-      if (error) throw error;
-      return (data ?? []) as ActiveCommitment[];
+      const [viewRes, debtRes] = await Promise.all([
+        supabase
+          .from("active_commitments")
+          .select("*")
+          .in("status", ["active", "pending", "confirmed"]),
+        // Fetch debt_paydown rows directly from the source table to guarantee
+        // we have debt_id (the view may not expose it).
+        supabase
+          .from("commitments")
+          .select("*")
+          .eq("commitment_type", "debt_paydown")
+          .in("status", ["pending", "confirmed"]),
+      ]);
+      if (viewRes.error) throw viewRes.error;
+      if (debtRes.error) throw debtRes.error;
+      const viewRows = (viewRes.data ?? []) as ActiveCommitment[];
+      const debtRows = (debtRes.data ?? []) as ActiveCommitment[];
+      // Prefer the commitments-table row (has debt_id) over the view row when
+      // ids collide; include any view rows not present in debt rows.
+      const debtIds = new Set(debtRows.map((r) => r.id).filter(Boolean));
+      const merged = [
+        ...debtRows,
+        ...viewRows.filter((r) => !(r.id && debtIds.has(r.id))),
+      ];
+      return merged;
     },
   });
 
