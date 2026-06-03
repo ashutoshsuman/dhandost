@@ -734,6 +734,7 @@ function DebtPaydownCard({
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["debts"] }),
         qc.invalidateQueries({ queryKey: ["compute-plan"] }),
+        qc.invalidateQueries({ queryKey: ["active-commitments"] }),
       ]);
       onConfirmed();
     },
