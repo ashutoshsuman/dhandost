@@ -312,6 +312,28 @@ function LivePlan() {
         const otherCommitments = allCommitments.filter(
           (c) => c.commitment_type !== "debt_paydown",
         );
+        const debtMap = new Map((debtsList ?? []).map((d) => [d.id, d]));
+        const resolveDebt = (commitment: ActiveCommitment) => {
+          if (commitment.debt_id) {
+            const byId = debtMap.get(commitment.debt_id);
+            if (byId) return byId;
+          }
+          if (commitment.debt_name) {
+            const name = commitment.debt_name.trim().toLowerCase();
+            const byName = debtsList?.find(
+              (d) => d.name?.trim().toLowerCase() === name,
+            );
+            if (byName) return byName;
+          }
+          if (commitment.balance_before != null) {
+            const before = Math.round(Number(commitment.balance_before));
+            const byBalance = debtsList?.find(
+              (d) => Math.round(Number(d.balance ?? d.current_balance ?? -1)) === before,
+            );
+            if (byBalance) return byBalance;
+          }
+          return undefined;
+        };
 
         const groups = new Map<string, {
           type: "reduce_discretionary" | "delay_goal";
@@ -384,16 +406,7 @@ function LivePlan() {
                   <DebtPaydownCard
                     key={c.id ?? `${c.debt_id}-${c.confirmed_at ?? "pending"}`}
                     commitment={c}
-                    debt={
-                      debtsList?.find((d) => d.id === c.debt_id) ??
-                      (c.debt_name
-                        ? debtsList?.find(
-                            (d) =>
-                              d.name?.toLowerCase() ===
-                              c.debt_name?.toLowerCase(),
-                          )
-                        : undefined)
-                    }
+                    debt={resolveDebt(c)}
                     onConfirmed={() => refetch()}
                   />
                 ))}
