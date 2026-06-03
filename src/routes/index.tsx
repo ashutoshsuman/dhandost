@@ -228,6 +228,37 @@ function LivePlan() {
             (ec) => !(data.active_commitments ?? []).some((ac) => ac.id === ec.id),
           ),
         ];
+        if (allCommitments.length === 0) {
+          return (
+            <section className="space-y-3">
+              <div>
+                <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                  Active Commitments
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Actions you&apos;ve already committed to improve your finances.
+                </p>
+              </div>
+              <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
+                <Lightbulb className="mx-auto h-5 w-5 text-muted-foreground/60" />
+                <p className="mt-2 text-sm font-medium text-foreground">
+                  No active commitments yet
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Apply a Three Paths recommendation to start tracking commitments.
+                </p>
+                <Link
+                  to="/paths"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+                >
+                  See Three Paths
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </section>
+          );
+        }
+
         const debtCommitments = allCommitments.filter(
           (c) => c.commitment_type === "debt_paydown",
         );
@@ -235,170 +266,141 @@ function LivePlan() {
           (c) => c.commitment_type !== "debt_paydown",
         );
 
-          const groups = new Map<string, {
-            type: "reduce_discretionary" | "delay_goal";
-            category?: string;
-            goal_name?: string;
-            goal_id?: string;
-            monthly_amount: number;
-            delay_weeks: number;
-            count: number;
-            latest_ends_at?: string;
-          }>();
-          for (const c of otherCommitments) {
-            const isReduce = c.commitment_type === "reduce_discretionary";
-            const key = isReduce
-              ? `reduce|${c.category ?? ""}`
-              : `delay|${(c as ActiveCommitment & { goal_id?: string }).goal_id ?? c.goal_name ?? ""}`;
-            const existing = groups.get(key);
-            if (existing) {
-              existing.monthly_amount += c.monthly_amount ?? 0;
-              existing.delay_weeks += c.delay_weeks ?? 0;
-              existing.count += 1;
-              if (c.ends_at && (!existing.latest_ends_at || c.ends_at > existing.latest_ends_at)) {
-                existing.latest_ends_at = c.ends_at;
-              }
-            } else {
-              groups.set(key, {
-                type: isReduce ? "reduce_discretionary" : "delay_goal",
-                category: c.category,
-                goal_name: c.goal_name,
-                monthly_amount: c.monthly_amount ?? 0,
-                delay_weeks: c.delay_weeks ?? 0,
-                count: 1,
-                latest_ends_at: c.ends_at,
-              });
+        const groups = new Map<string, {
+          type: "reduce_discretionary" | "delay_goal";
+          category?: string;
+          goal_name?: string;
+          goal_id?: string;
+          monthly_amount: number;
+          delay_weeks: number;
+          count: number;
+          latest_ends_at?: string;
+        }>();
+        for (const c of otherCommitments) {
+          const isReduce = c.commitment_type === "reduce_discretionary";
+          const key = isReduce
+            ? `reduce|${c.category ?? ""}`
+            : `delay|${(c as ActiveCommitment & { goal_id?: string }).goal_id ?? c.goal_name ?? ""}`;
+          const existing = groups.get(key);
+          if (existing) {
+            existing.monthly_amount += c.monthly_amount ?? 0;
+            existing.delay_weeks += c.delay_weeks ?? 0;
+            existing.count += 1;
+            if (c.ends_at && (!existing.latest_ends_at || c.ends_at > existing.latest_ends_at)) {
+              existing.latest_ends_at = c.ends_at;
             }
+          } else {
+            groups.set(key, {
+              type: isReduce ? "reduce_discretionary" : "delay_goal",
+              category: c.category,
+              goal_name: c.goal_name,
+              monthly_amount: c.monthly_amount ?? 0,
+              delay_weeks: c.delay_weeks ?? 0,
+              count: 1,
+              latest_ends_at: c.ends_at,
+            });
           }
-          const grouped = Array.from(groups.values());
-          const totalCount = grouped.length + debtCommitments.length;
-          return (
-            <section className="space-y-3">
-              <div>
-                <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                  Active Commitments
-                  <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                    {totalCount}
+        }
+        const grouped = Array.from(groups.values());
+        const totalCount = grouped.length + debtCommitments.length;
+        return (
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                Active Commitments
+                <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                  {totalCount}
+                </span>
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Actions you&apos;ve already committed to improve your finances.
+              </p>
+            </div>
+
+            {/* Cash flow improvement banner */}
+            {(data.total_committed_reductions ?? 0) > 0 && (
+              <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
+                <TrendingUp className="h-4 w-4 text-success shrink-0" />
+                <p className="text-sm text-foreground">
+                  Your active commitments are improving your monthly cash flow by{" "}
+                  <span className="font-semibold text-success">
+                    {formatINR(data.total_committed_reductions ?? 0)}/mo
                   </span>
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Actions you&apos;ve already committed to improve your finances.
                 </p>
               </div>
+            )}
 
-              {/* Cash flow improvement banner */}
-              {(data.total_committed_reductions ?? 0) > 0 && (
-                <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
-                  <TrendingUp className="h-4 w-4 text-success shrink-0" />
-                  <p className="text-sm text-foreground">
-                    Your active commitments are improving your monthly cash flow by{" "}
-                    <span className="font-semibold text-success">
-                      {formatINR(data.total_committed_reductions ?? 0)}/mo
-                    </span>
-                  </p>
-                </div>
-              )}
-
-              {/* Debt paydown cards (pending + confirmed) */}
-              {debtCommitments.length > 0 && (
-                <div className="space-y-3">
-                  {debtCommitments.map((c) => (
-                    <DebtPaydownCard
-                      key={c.id ?? `${c.debt_id}-${c.confirmed_at ?? "pending"}`}
-                      commitment={c}
-                      debt={debtsList?.find((d) => d.id === c.debt_id)}
-                      onConfirmed={() => refetch()}
-                    />
-                  ))}
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                {grouped.map((g, i) => {
-                  const isReduce = g.type === "reduce_discretionary";
-                  return (
-                    <div
-                      key={i}
-                      className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-2.5"
-                    >
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary/60 mt-0.5">
-                        {isReduce ? (
-                          <TrendingDown className="h-3.5 w-3.5 text-debit" />
-                        ) : (
-                          <Clock className="h-3.5 w-3.5 text-warning" />
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {isReduce
-                            ? `📉 Reduce ${g.category || "spending"}`
-                            : `🎯 ${g.goal_name || "Goal"}`}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          {isReduce ? (
-                            <>
-                              {g.count} active commitment{g.count === 1 ? "" : "s"}
-                              {g.latest_ends_at && (
-                                <>
-                                  <span className="mx-1">·</span>
-                                  Ends: {formatDate(g.latest_ends_at)}
-                                </>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              Delayed by {g.delay_weeks} weeks
-                              <span className="mx-1">·</span>
-                              {g.count} active commitment{g.count === 1 ? "" : "s"}
-                            </>
-                          )}
-                          <span className="mx-1">·</span>
-                          <span className="text-primary/80">Active</span>
-                        </p>
-                      </div>
-
-                      <span className="text-sm font-semibold tabular-nums text-success whitespace-nowrap shrink-0 mt-0.5">
-                        {isReduce
-                          ? `${formatINR(g.monthly_amount)}/mo`
-                          : `${g.delay_weeks} weeks`}
-                      </span>
-                    </div>
-                  );
-                })}
+            {/* Debt paydown cards (pending + confirmed) */}
+            {debtCommitments.length > 0 && (
+              <div className="space-y-3">
+                {debtCommitments.map((c) => (
+                  <DebtPaydownCard
+                    key={c.id ?? `${c.debt_id}-${c.confirmed_at ?? "pending"}`}
+                    commitment={c}
+                    debt={debtsList?.find((d) => d.id === c.debt_id)}
+                    onConfirmed={() => refetch()}
+                  />
+                ))}
               </div>
-            </section>
-          );
-        })()
-      ) : (
+            )}
 
-        <section className="space-y-3">
-          <div>
-            <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Active Commitments
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Actions you&apos;ve already committed to improve your finances.
-            </p>
-          </div>
-          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
-            <Lightbulb className="mx-auto h-5 w-5 text-muted-foreground/60" />
-            <p className="mt-2 text-sm font-medium text-foreground">
-              No active commitments yet
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Apply a Three Paths recommendation to start tracking commitments.
-            </p>
-            <Link
-              to="/paths"
-              className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity"
-            >
-              See Three Paths
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-        </section>
-      )}
+            <div className="space-y-1.5">
+              {grouped.map((g, i) => {
+                const isReduce = g.type === "reduce_discretionary";
+                return (
+                  <div
+                    key={i}
+                    className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-2.5"
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary/60 mt-0.5">
+                      {isReduce ? (
+                        <TrendingDown className="h-3.5 w-3.5 text-debit" />
+                      ) : (
+                        <Clock className="h-3.5 w-3.5 text-warning" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {isReduce
+                          ? `📉 Reduce ${g.category || "spending"}`
+                          : `🎯 ${g.goal_name || "Goal"}`}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {isReduce ? (
+                          <>
+                            {g.count} active commitment{g.count === 1 ? "" : "s"}
+                            {g.latest_ends_at && (
+                              <>
+                                <span className="mx-1">·</span>
+                                Ends: {formatDate(g.latest_ends_at)}
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            Delayed by {g.delay_weeks} weeks
+                            <span className="mx-1">·</span>
+                            {g.count} active commitment{g.count === 1 ? "" : "s"}
+                          </>
+                        )}
+                        <span className="mx-1">·</span>
+                        <span className="text-primary/80">Active</span>
+                      </p>
+                    </div>
+
+                    <span className="text-sm font-semibold tabular-nums text-success whitespace-nowrap shrink-0 mt-0.5">
+                      {isReduce
+                        ? `${formatINR(g.monthly_amount)}/mo`
+                        : `${g.delay_weeks} weeks`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Breakdown */}
       <section className="rounded-xl border border-border bg-card divide-y divide-border">
