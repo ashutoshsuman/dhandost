@@ -132,30 +132,44 @@ function LivePlan() {
   const { data: activeCommitments } = useQuery({
     queryKey: ["active-commitments"],
     queryFn: async () => {
-      const [viewRes, debtRes] = await Promise.all([
-        supabase
-          .from("active_commitments")
-          .select("*")
-          .in("status", ["active", "pending", "confirmed"]),
-        // Fetch debt_paydown rows directly from the source table to guarantee
-        // we have debt_id (the view may not expose it).
-        supabase
+      // Primary source: the active_commitments view, which already exposes
+      // debt_paydown rows with status 'pending' / 'confirmed'.
+      const { data: viewData, error: viewError } = await supabase
+        .from("active_commitments")
+        .select("*")
+        .in("status", ["active", "pending", "confirmed"]);
+      if (viewError) throw viewError;
+      const viewRows = (viewData ?? []) as ActiveCommitment[];
+
+      // Best-effort enrichment from the source commitments table to fill in
+      // debt_id when the view omits it. Any failure here must NOT drop the
+      // view rows that are already rendering correctly.
+      let debtRows: ActiveCommitment[] = [];
+      try {
+        const { data: debtData, error: debtError } = await supabase
           .from("commitments")
           .select("*")
           .eq("commitment_type", "debt_paydown")
-          .in("status", ["pending", "confirmed"]),
-      ]);
-      if (viewRes.error) throw viewRes.error;
-      if (debtRes.error) throw debtRes.error;
-      const viewRows = (viewRes.data ?? []) as ActiveCommitment[];
-      const debtRows = (debtRes.data ?? []) as ActiveCommitment[];
-      // Prefer the commitments-table row (has debt_id) over the view row when
-      // ids collide; include any view rows not present in debt rows.
-      const debtIds = new Set(debtRows.map((r) => r.id).filter(Boolean));
-      const merged = [
-        ...debtRows,
-        ...viewRows.filter((r) => !(r.id && debtIds.has(r.id))),
-      ];
+          .in("status", ["pending", "confirmed"]);
+        if (!debtError) debtRows = (debtData ?? []) as ActiveCommitment[];
+      } catch {
+        /* ignore — fall back to view rows alone */
+      }
+
+      const debtById = new Map<string, ActiveCommitment>();
+      debtRows.forEach((r) => {
+        if (r.id) debtById.set(r.id, r);
+      });
+      const merged: ActiveCommitment[] = viewRows.map((v) => {
+        if (v.commitment_type !== "debt_paydown" || !v.id) return v;
+        const extra = debtById.get(v.id);
+        return extra ? { ...extra, ...v, debt_id: v.debt_id ?? extra.debt_id } : v;
+      });
+      // Include any debt_paydown rows that exist only in the source table.
+      const viewIds = new Set(viewRows.map((r) => r.id).filter(Boolean));
+      debtRows.forEach((r) => {
+        if (r.id && !viewIds.has(r.id)) merged.push(r);
+      });
       return merged;
     },
   });
