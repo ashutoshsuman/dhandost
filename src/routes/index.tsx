@@ -373,7 +373,16 @@ function LivePlan() {
                   <DebtPaydownCard
                     key={c.id ?? `${c.debt_id}-${c.confirmed_at ?? "pending"}`}
                     commitment={c}
-                    debt={debtsList?.find((d) => d.id === c.debt_id)}
+                    debt={
+                      debtsList?.find((d) => d.id === c.debt_id) ??
+                      (c.debt_name
+                        ? debtsList?.find(
+                            (d) =>
+                              d.name?.toLowerCase() ===
+                              c.debt_name?.toLowerCase(),
+                          )
+                        : undefined)
+                    }
                     onConfirmed={() => refetch()}
                   />
                 ))}
