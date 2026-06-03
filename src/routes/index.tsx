@@ -33,7 +33,7 @@ type PlanGoal = {
 type ActiveCommitment = {
   id?: string;
   commitment_type?: "reduce_discretionary" | "delay_goal" | "debt_paydown";
-  status?: "pending" | "confirmed" | string;
+  status?: "active" | "pending" | "confirmed" | string;
   goal_name?: string;
   goal_id?: string;
   category?: string;
@@ -50,6 +50,12 @@ type ActiveCommitment = {
   confirmed_at?: string;
   interest_rate_annual?: number;
 };
+
+const visibleCommitmentStatuses = new Set(["active", "pending", "confirmed"]);
+
+function isVisibleCommitment(commitment: ActiveCommitment) {
+  return visibleCommitmentStatuses.has(commitment.status ?? "active");
+}
 
 
 
@@ -123,17 +129,13 @@ function LivePlan() {
     },
   });
 
-  // Fetch debt paydown commitments that the hyper-action edge function does
-  // not return because it filters to status = 'active' only. Pending and
-  // confirmed debt paydowns must also appear in the active list.
-  const { data: extraCommitments } = useQuery({
-    queryKey: ["commitments", "pending-confirmed"],
+  const { data: activeCommitments } = useQuery({
+    queryKey: ["active-commitments"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("commitments")
+        .from("active_commitments")
         .select("*")
-        .eq("commitment_type", "debt_paydown")
-        .in("status", ["pending", "confirmed"]);
+        .in("status", ["active", "pending", "confirmed"]);
       if (error) throw error;
       return (data ?? []) as ActiveCommitment[];
     },
@@ -171,6 +173,13 @@ function LivePlan() {
   }
 
   const headroom = data.discretionary_headroom;
+  const allCommitments = (activeCommitments ?? data.active_commitments ?? []).filter(
+    isVisibleCommitment,
+  );
+  const committedMonthlyImprovement = allCommitments.reduce((sum, commitment) => {
+    if (commitment.commitment_type !== "reduce_discretionary") return sum;
+    return sum + (commitment.monthly_amount ?? 0);
+  }, 0);
 
   return (
     <div className="max-w-2xl mx-auto space-y-10 pb-8">
@@ -198,7 +207,7 @@ function LivePlan() {
             Committed Improvement
           </p>
           <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-success">
-            {formatINR(data.total_committed_reductions ?? 0)}
+            {formatINR(committedMonthlyImprovement)}
             <span className="text-sm font-medium text-muted-foreground ml-0.5">/mo</span>
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -222,12 +231,6 @@ function LivePlan() {
 
       {/* Active Commitments */}
       {(() => {
-        const allCommitments = [
-          ...(data.active_commitments ?? []),
-          ...(extraCommitments ?? []).filter(
-            (ec) => !(data.active_commitments ?? []).some((ac) => ac.id === ec.id),
-          ),
-        ];
         if (allCommitments.length === 0) {
           return (
             <section className="space-y-3">
@@ -302,7 +305,7 @@ function LivePlan() {
           }
         }
         const grouped = Array.from(groups.values());
-        const totalCount = grouped.length + debtCommitments.length;
+        const totalCount = allCommitments.length;
         return (
           <section className="space-y-3">
             <div>
@@ -318,13 +321,13 @@ function LivePlan() {
             </div>
 
             {/* Cash flow improvement banner */}
-            {(data.total_committed_reductions ?? 0) > 0 && (
+            {committedMonthlyImprovement > 0 && (
               <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
                 <TrendingUp className="h-4 w-4 text-success shrink-0" />
                 <p className="text-sm text-foreground">
                   Your active commitments are improving your monthly cash flow by{" "}
                   <span className="font-semibold text-success">
-                    {formatINR(data.total_committed_reductions ?? 0)}/mo
+                    {formatINR(committedMonthlyImprovement)}/mo
                   </span>
                 </p>
               </div>
@@ -731,6 +734,7 @@ function DebtPaydownCard({
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["debts"] }),
         qc.invalidateQueries({ queryKey: ["compute-plan"] }),
+        qc.invalidateQueries({ queryKey: ["active-commitments"] }),
       ]);
       onConfirmed();
     },
