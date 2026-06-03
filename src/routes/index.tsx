@@ -2,7 +2,20 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Info, RefreshCw, ChevronDown, CheckCircle2, PartyPopper, Lightbulb, ArrowRight, TrendingDown, Clock, TrendingUp, Banknote } from "lucide-react";
+import {
+  Loader2,
+  Info,
+  RefreshCw,
+  ChevronDown,
+  CheckCircle2,
+  PartyPopper,
+  Lightbulb,
+  ArrowRight,
+  TrendingDown,
+  Clock,
+  TrendingUp,
+  Banknote,
+} from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
@@ -57,9 +70,6 @@ function isVisibleCommitment(commitment: ActiveCommitment) {
   return visibleCommitmentStatuses.has(commitment.status ?? "active");
 }
 
-
-
-
 type PlanResponse = {
   expected_monthly_income: number;
   total_fixed_outflows: number;
@@ -87,10 +97,9 @@ function LivePlan() {
       }
       // Shared authenticated supabase client — invoke() auto-attaches the
       // user's access token. Do NOT use fetch() or set headers manually.
-      const { data, error } = await supabase.functions.invoke<PlanResponse>(
-        "hyper-action",
-        { body: {} },
-      );
+      const { data, error } = await supabase.functions.invoke<PlanResponse>("hyper-action", {
+        body: {},
+      });
       if (error) {
         console.error("hyper-action failed:", error);
         throw error;
@@ -113,11 +122,11 @@ function LivePlan() {
   });
 
   const { data: debtsList } = useQuery({
-    queryKey: ["debts"],
+    queryKey: ["debts-for-commitments"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("debts")
-        .select("id,name,interest_rate_annual,balance,current_balance");
+        .select("id,name,interest_rate_annual,balance");
       if (error) throw error;
       return (data ?? []) as Array<{
         id: string;
@@ -163,7 +172,17 @@ function LivePlan() {
       const merged: ActiveCommitment[] = viewRows.map((v) => {
         if (v.commitment_type !== "debt_paydown" || !v.id) return v;
         const extra = debtById.get(v.id);
-        return extra ? { ...extra, ...v, debt_id: v.debt_id ?? extra.debt_id } : v;
+        return extra
+          ? {
+              ...extra,
+              ...v,
+              debt_id: v.debt_id ?? extra.debt_id,
+              debt_name: v.debt_name ?? extra.debt_name,
+              interest_rate_annual: v.interest_rate_annual ?? extra.interest_rate_annual,
+              balance_before: v.balance_before ?? extra.balance_before,
+              balance_after: v.balance_after ?? extra.balance_after,
+            }
+          : v;
       });
       // Include any debt_paydown rows that exist only in the source table.
       const viewIds = new Set(viewRows.map((r) => r.id).filter(Boolean));
@@ -174,15 +193,11 @@ function LivePlan() {
     },
   });
 
-
-
   if (isLoading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        <p className="mt-4 text-sm text-muted-foreground">
-          Computing your plan…
-        </p>
+        <p className="mt-4 text-sm text-muted-foreground">Computing your plan…</p>
       </div>
     );
   }
@@ -229,9 +244,7 @@ function LivePlan() {
           <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
             {formatINR(headroom)}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            available this month
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">available this month</p>
         </div>
 
         {/* Committed Improvement */}
@@ -243,9 +256,7 @@ function LivePlan() {
             {formatINR(committedMonthlyImprovement)}
             <span className="text-sm font-medium text-muted-foreground ml-0.5">/mo</span>
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            from active commitments
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">from active commitments</p>
         </div>
 
         {/* Projected Headroom */}
@@ -256,9 +267,7 @@ function LivePlan() {
           <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
             {formatINR(data.projected_discretionary_headroom ?? 0)}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            After active commitments
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">After active commitments</p>
         </div>
       </section>
 
@@ -295,23 +304,42 @@ function LivePlan() {
           );
         }
 
-        const debtCommitments = allCommitments.filter(
-          (c) => c.commitment_type === "debt_paydown",
-        );
-        const otherCommitments = allCommitments.filter(
-          (c) => c.commitment_type !== "debt_paydown",
-        );
+        const debtCommitments = allCommitments.filter((c) => c.commitment_type === "debt_paydown");
+        const otherCommitments = allCommitments.filter((c) => c.commitment_type !== "debt_paydown");
+        const debtMap = new Map((debtsList ?? []).map((d) => [d.id, d]));
+        const resolveDebt = (commitment: ActiveCommitment) => {
+          if (commitment.debt_id) {
+            const byId = debtMap.get(commitment.debt_id);
+            if (byId) return byId;
+          }
+          if (commitment.debt_name) {
+            const name = commitment.debt_name.trim().toLowerCase();
+            const byName = debtsList?.find((d) => d.name?.trim().toLowerCase() === name);
+            if (byName) return byName;
+          }
+          if (commitment.balance_before != null) {
+            const before = Math.round(Number(commitment.balance_before));
+            const byBalance = debtsList?.find(
+              (d) => Math.round(Number(d.balance ?? d.current_balance ?? -1)) === before,
+            );
+            if (byBalance) return byBalance;
+          }
+          return undefined;
+        };
 
-        const groups = new Map<string, {
-          type: "reduce_discretionary" | "delay_goal";
-          category?: string;
-          goal_name?: string;
-          goal_id?: string;
-          monthly_amount: number;
-          delay_weeks: number;
-          count: number;
-          latest_ends_at?: string;
-        }>();
+        const groups = new Map<
+          string,
+          {
+            type: "reduce_discretionary" | "delay_goal";
+            category?: string;
+            goal_name?: string;
+            goal_id?: string;
+            monthly_amount: number;
+            delay_weeks: number;
+            count: number;
+            latest_ends_at?: string;
+          }
+        >();
         for (const c of otherCommitments) {
           const isReduce = c.commitment_type === "reduce_discretionary";
           const key = isReduce
@@ -373,16 +401,7 @@ function LivePlan() {
                   <DebtPaydownCard
                     key={c.id ?? `${c.debt_id}-${c.confirmed_at ?? "pending"}`}
                     commitment={c}
-                    debt={
-                      debtsList?.find((d) => d.id === c.debt_id) ??
-                      (c.debt_name
-                        ? debtsList?.find(
-                            (d) =>
-                              d.name?.toLowerCase() ===
-                              c.debt_name?.toLowerCase(),
-                          )
-                        : undefined)
-                    }
+                    debt={resolveDebt(c)}
                     onConfirmed={() => refetch()}
                   />
                 ))}
@@ -435,9 +454,7 @@ function LivePlan() {
                     </div>
 
                     <span className="text-sm font-semibold tabular-nums text-success whitespace-nowrap shrink-0 mt-0.5">
-                      {isReduce
-                        ? `${formatINR(g.monthly_amount)}/mo`
-                        : `${g.delay_weeks} weeks`}
+                      {isReduce ? `${formatINR(g.monthly_amount)}/mo` : `${g.delay_weeks} weeks`}
                     </span>
                   </div>
                 );
@@ -479,8 +496,7 @@ function LivePlan() {
       {/* Debt */}
       {data.total_debt_balance > 0 && (
         <p className="text-xs text-muted-foreground text-center">
-          {formatINR(data.total_debt_balance)} across{" "}
-          {data.debt_count ?? "your"} debts at avg{" "}
+          {formatINR(data.total_debt_balance)} across {data.debt_count ?? "your"} debts at avg{" "}
           {data.weighted_avg_interest_rate?.toFixed(1)}% interest.
         </p>
       )}
@@ -534,16 +550,13 @@ function LivePlan() {
           disabled={isFetching}
           className="inline-flex items-center gap-1.5 hover:text-foreground disabled:opacity-50 cursor-pointer"
         >
-          <RefreshCw
-            className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`}
-          />
+          <RefreshCw className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} />
           Refresh
         </button>
       </footer>
     </div>
   );
 }
-
 
 function BreakdownRow({
   label,
@@ -569,21 +582,13 @@ function BreakdownRow({
           <span className={highlight ? "font-medium" : ""}>{label}</span>
           <Info className="h-3 w-3 text-muted-foreground/60" />
         </span>
-        <span
-          className={`tabular-nums ${
-            highlight ? "font-semibold text-base" : "font-medium"
-          }`}
-        >
-          {prefix && (
-            <span className="text-muted-foreground mr-1.5">{prefix}</span>
-          )}
+        <span className={`tabular-nums ${highlight ? "font-semibold text-base" : "font-medium"}`}>
+          {prefix && <span className="text-muted-foreground mr-1.5">{prefix}</span>}
           {formatINR(amount)}
         </span>
       </button>
       {open && (
-        <div className="px-5 pb-4 text-xs text-muted-foreground leading-relaxed">
-          {detail}
-        </div>
+        <div className="px-5 pb-4 text-xs text-muted-foreground leading-relaxed">{detail}</div>
       )}
     </div>
   );
@@ -596,10 +601,7 @@ function GoalCard({ goal }: { goal: PlanGoal }) {
 
   return (
     <div className="rounded-xl border border-border bg-card">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full text-left p-4 cursor-pointer"
-      >
+      <button onClick={() => setOpen((v) => !v)} className="w-full text-left p-4 cursor-pointer">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="font-medium truncate">{goal.name}</p>
@@ -620,8 +622,7 @@ function GoalCard({ goal }: { goal: PlanGoal }) {
         <div className="mt-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground tabular-nums mb-1.5">
             <span>
-              {formatINR(goal.current_amount)} /{" "}
-              {formatINR(goal.target_amount)}
+              {formatINR(goal.current_amount)} / {formatINR(goal.target_amount)}
             </span>
             <span>{pct.toFixed(0)}%</span>
           </div>
@@ -651,9 +652,9 @@ function GoalCard({ goal }: { goal: PlanGoal }) {
       {open && (
         <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground leading-relaxed">
           Required monthly savings is derived from the gap between{" "}
-          {formatINR(goal.target_amount - goal.current_amount)} remaining and
-          the months until {formatDate(goal.target_date)}. Status reflects
-          whether your current pace meets that schedule.
+          {formatINR(goal.target_amount - goal.current_amount)} remaining and the months until{" "}
+          {formatDate(goal.target_date)}. Status reflects whether your current pace meets that
+          schedule.
         </div>
       )}
     </div>
@@ -682,8 +683,7 @@ function CompletedGoalCard({ goal }: { goal: Goal }) {
       <div className="mt-3">
         <div className="flex items-center justify-between text-xs text-green-700/80 tabular-nums mb-1.5">
           <span>
-            {formatINR(goal.current_amount ?? 0)} /{" "}
-            {formatINR(goal.target_amount)}
+            {formatINR(goal.current_amount ?? 0)} / {formatINR(goal.target_amount)}
           </span>
           <span>100%</span>
         </div>
@@ -706,20 +706,20 @@ function statusLabel(s: string) {
 }
 
 function statusStyles(s: string): { bg: string; fg: string } {
-  if (s === "behind")
-    return { bg: "oklch(0.94 0.03 25)", fg: "oklch(0.48 0.10 25)" };
-  if (s === "at_risk")
-    return { bg: "oklch(0.95 0.04 80)", fg: "oklch(0.52 0.09 75)" };
+  if (s === "behind") return { bg: "oklch(0.94 0.03 25)", fg: "oklch(0.48 0.10 25)" };
+  if (s === "at_risk") return { bg: "oklch(0.95 0.04 80)", fg: "oklch(0.52 0.09 75)" };
   return { bg: "oklch(0.94 0.04 160)", fg: "oklch(0.45 0.08 160)" };
 }
 
-type DebtRef = {
-  id: string;
-  name: string;
-  interest_rate_annual: number | null;
-  balance?: number | null;
-  current_balance?: number | null;
-} | undefined;
+type DebtRef =
+  | {
+      id: string;
+      name: string;
+      interest_rate_annual: number | null;
+      balance?: number | null;
+      current_balance?: number | null;
+    }
+  | undefined;
 
 function fmtRupees(n: number | null | undefined): string {
   const v = Math.round(Number(n ?? 0));
@@ -756,21 +756,16 @@ function DebtPaydownCard({
   const name = debt?.name ?? commitment.debt_name ?? "this debt";
   const rate = debt?.interest_rate_annual ?? commitment.interest_rate_annual ?? null;
   const amount = commitment.paydown_amount ?? 0;
-  const before =
-    commitment.balance_before ??
-    debt?.current_balance ??
-    debt?.balance ??
-    0;
+  const before = commitment.balance_before ?? debt?.current_balance ?? debt?.balance ?? 0;
   const after = commitment.balance_after ?? Math.max(0, before - amount);
   const isConfirmed = commitment.status === "confirmed";
 
   const confirm = useMutation({
     mutationFn: async () => {
       if (!commitment.id) throw new Error("Missing commitment id");
-      const { data, error } = await supabase.functions.invoke(
-        "confirm-debt-paydown",
-        { body: { commitment_id: commitment.id } },
-      );
+      const { data, error } = await supabase.functions.invoke("confirm-debt-paydown", {
+        body: { commitment_id: commitment.id },
+      });
       if (error) {
         console.error("confirm-debt-paydown failed:", error);
         throw error;
@@ -800,9 +795,7 @@ function DebtPaydownCard({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-medium text-foreground">
-                {name} — payment confirmed
-              </p>
+              <p className="text-sm font-medium text-foreground">{name} — payment confirmed</p>
               <span className="inline-flex items-center rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success">
                 Done
               </span>
@@ -811,7 +804,8 @@ function DebtPaydownCard({
               {fmtRupees(amount)} paid toward {name}
               {commitment.confirmed_at ? ` on ${fmtDMY(commitment.confirmed_at)}` : ""}.
               <br />
-              Balance {fmtRupees(before)} → {fmtRupees(after)}{fmtRate(rate)}.
+              Balance {fmtRupees(before)} → {fmtRupees(after)}
+              {fmtRate(rate)}.
             </p>
           </div>
         </div>
@@ -826,13 +820,12 @@ function DebtPaydownCard({
           <Banknote className="h-4 w-4 text-foreground" />
         </div>
         <div className="min-w-0 flex-1 space-y-2">
-          <p className="text-sm font-medium text-foreground">
-            Pay down {name}
-          </p>
+          <p className="text-sm font-medium text-foreground">Pay down {name}</p>
           <p className="text-sm text-muted-foreground">
             {fmtRupees(amount)} earmarked toward {name}.
             <br />
-            Current balance {fmtRupees(before)}{fmtRate(rate)}.
+            Current balance {fmtRupees(before)}
+            {fmtRate(rate)}.
             <br />
             Mark as paid once you&apos;ve made the payment to update your balance.
           </p>
