@@ -515,6 +515,14 @@ function LivePlan() {
           detail="What remains after income minus fixed outflows and goal savings."
         />
       </section>
+        {(data.total_parked_savings ?? 0) > 0 && (
+          <BreakdownRow
+            label="Parked savings"
+            amount={data.total_parked_savings ?? 0}
+            prefix="−"
+            detail="Money set aside to your emergency fund or investment via confirmed savings commitments. Already excluded from discretionary headroom."
+          />
+        )}
 
       {/* Debt */}
       {data.total_debt_balance > 0 && (
