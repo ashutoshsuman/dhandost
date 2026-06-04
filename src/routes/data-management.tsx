@@ -319,8 +319,16 @@ type CommitmentRow = {
   monthly_amount: number | null;
   paydown_amount: number | null;
   created_at: string;
-  goals?: { name: string }[] | null;
-  debts?: { name: string }[] | null;
+  goals?: { name: string } | { name: string }[] | null;
+  debts?: { name: string } | { name: string }[] | null;
+};
+
+type EmbeddedName = { name: string } | { name: string }[] | null | undefined;
+
+const embedName = (rel: EmbeddedName): string | null => {
+  if (!rel) return null;
+  if (Array.isArray(rel)) return rel[0]?.name ?? null;
+  return rel.name ?? null;
 };
 
 function CommitmentsSection() {
@@ -328,17 +336,22 @@ function CommitmentsSection() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const getLabel = (c: CommitmentRow) => {
-    const goalName = c.goals?.[0]?.name ?? 'Unknown goal';
-    const debtName = c.debts?.[0]?.name ?? 'Unknown debt';
-    const amt = (val: number | null | undefined) => val != null ? `₹${Number(val).toLocaleString('en-IN')}` : '₹—';
+    const goalName = embedName(c.goals);
+    const debtName = embedName(c.debts);
+    const amt = (val: number | null | undefined) =>
+      val != null ? `₹${Number(val).toLocaleString('en-IN')}` : null;
     if (c.commitment_type === 'delay_goal')
-      return `Delay goal · ${goalName}`;
+      return goalName
+        ? `Delay goal · ${goalName}`
+        : `Delay goal · (goal deleted — safe to cancel)`;
     if (c.commitment_type === 'reduce_discretionary')
-      return `Cut ${c.category ?? 'discretionary'} · ${amt(c.monthly_amount)}/mo`;
+      return `Cut ${c.category ?? 'discretionary'} · ${amt(c.monthly_amount) ?? '₹—'}/mo`;
     if (c.commitment_type === 'debt_paydown')
-      return `Pay down ${debtName} · ${amt(c.paydown_amount)}`;
+      return debtName
+        ? `Pay down ${debtName} · ${amt(c.paydown_amount) ?? '₹—'}`
+        : `Debt paydown · (debt deleted — safe to cancel)`;
     if (c.commitment_type === 'allocate_savings')
-      return `Park savings · ${c.savings_label ?? 'Savings'} · ${amt(c.paydown_amount)}`;
+      return `Park savings · ${c.savings_label ?? 'Savings'} · ${amt(c.paydown_amount) ?? '₹—'}`;
     return c.commitment_type ?? '—';
   };
 
@@ -368,7 +381,9 @@ function CommitmentsSection() {
         .in("status", ["active", "pending"])
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as CommitmentRow[];
+      const rows = (data ?? []) as CommitmentRow[];
+      if (rows[0]) console.log('commitment row sample:', JSON.stringify(rows[0]));
+      return rows;
     },
   });
 
