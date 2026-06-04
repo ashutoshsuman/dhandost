@@ -412,10 +412,12 @@ function CommitmentsSection() {
             </thead>
             <tbody className="divide-y divide-border">
               {data.map((c) => {
-                const amount =
-                  c.commitment_type === 'debt_paydown' || c.commitment_type === 'allocate_savings'
-                    ? Number(c.paydown_amount ?? 0)
-                    : Number(c.monthly_amount ?? 0);
+                let amountText = "—";
+                if (c.commitment_type === 'debt_paydown' || c.commitment_type === 'allocate_savings') {
+                  amountText = c.paydown_amount != null ? `₹${Number(c.paydown_amount).toLocaleString('en-IN')}` : '₹—';
+                } else if (c.commitment_type === 'delay_goal' || c.commitment_type === 'reduce_discretionary') {
+                  amountText = c.monthly_amount != null ? `₹${Number(c.monthly_amount).toLocaleString('en-IN')}/mo` : '₹—';
+                }
                 const canCancel = c.status === "active" || c.status === "pending";
                 return (
                   <tr key={c.id}>
