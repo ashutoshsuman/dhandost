@@ -381,7 +381,9 @@ function CommitmentsSection() {
         .in("status", ["active", "pending"])
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as CommitmentRow[];
+      const rows = (data ?? []) as CommitmentRow[];
+      if (rows[0]) console.log('commitment row sample:', JSON.stringify(rows[0]));
+      return rows;
     },
   });
 
