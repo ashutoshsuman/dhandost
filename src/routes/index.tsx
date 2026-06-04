@@ -45,7 +45,11 @@ type PlanGoal = {
 
 type ActiveCommitment = {
   id?: string;
-  commitment_type?: "reduce_discretionary" | "delay_goal" | "debt_paydown";
+  commitment_type?:
+    | "reduce_discretionary"
+    | "delay_goal"
+    | "debt_paydown"
+    | "allocate_savings";
   status?: "active" | "pending" | "confirmed" | string;
   goal_name?: string;
   goal_id?: string;
@@ -62,6 +66,8 @@ type ActiveCommitment = {
   balance_after?: number;
   confirmed_at?: string;
   interest_rate_annual?: number;
+  // Allocate savings fields
+  savings_label?: string;
 };
 
 const visibleCommitmentStatuses = new Set(["active", "pending", "confirmed"]);
@@ -75,6 +81,7 @@ type PlanResponse = {
   total_fixed_outflows: number;
   total_goal_savings_required: number;
   discretionary_headroom: number;
+  total_parked_savings?: number;
   total_committed_reductions?: number;
   projected_discretionary_headroom?: number;
   active_commitments?: ActiveCommitment[];
