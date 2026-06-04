@@ -404,7 +404,7 @@ function CommitmentsSection() {
             <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="text-left px-4 py-2 font-medium">Type</th>
-                <th className="text-left px-4 py-2 font-medium">Description</th>
+                <th className="text-left px-4 py-2 font-medium">Commitment</th>
                 <th className="text-right px-4 py-2 font-medium">Amount</th>
                 <th className="text-left px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2"></th>
