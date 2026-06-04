@@ -252,6 +252,22 @@ function PathsPage() {
 
   if (!data) return null;
 
+  if (data.needs_goal) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+          <h1 className="text-xl font-semibold">Set a goal first</h1>
+          <p className="text-sm text-muted-foreground whitespace-pre-line">
+            {data.message ?? "Add a goal so we can suggest meaningful ways to allocate this."}
+          </p>
+          <div>
+            <Button onClick={() => navigate({ to: "/goals" })}>Add a goal</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const isIncome = data.trigger_type === "surprise_income";
   const heading = isIncome
     ? `Three ways to use this ${formatINR(data.trigger_amount)}`
