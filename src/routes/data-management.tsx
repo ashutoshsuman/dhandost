@@ -312,23 +312,37 @@ type CommitmentRow = {
   id: string;
   commitment_type: string | null;
   status: string;
-  description: string | null;
+  savings_label: string | null;
   goal_id: string | null;
   debt_id: string | null;
   monthly_amount: number | null;
   paydown_amount: number | null;
+  created_at: string;
 };
 
 function CommitmentsSection() {
   const qc = useQueryClient();
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const getLabel = (c: CommitmentRow) => {
+    if (c.commitment_type === 'debt_paydown') return `Debt paydown — ₹${c.paydown_amount?.toLocaleString('en-IN') ?? '—'}`;
+    if (c.commitment_type === 'allocate_savings') return `Park savings — ${c.savings_label ?? 'Savings'} ₹${c.paydown_amount?.toLocaleString('en-IN') ?? '—'}`;
+    if (c.commitment_type === 'reduce_discretionary') return `Cut discretionary — ₹${c.monthly_amount?.toLocaleString('en-IN') ?? '—'}/mo`;
+    if (c.commitment_type === 'delay_goal') return `Delay goal — ₹${c.monthly_amount?.toLocaleString('en-IN') ?? '—'}/mo`;
+    return c.commitment_type ?? '—';
+  };
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["dm-commitments"],
     queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) throw new Error("Not signed in");
       const { data, error } = await supabase
         .from("active_commitments")
-        .select("id, commitment_type, status, description, goal_id, debt_id, monthly_amount, paydown_amount")
+        .select("id, commitment_type, status, monthly_amount, paydown_amount, savings_label, goal_id, debt_id, created_at")
+        .eq("user_id", user.id)
+        .in("status", ["active", "pending"])
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as CommitmentRow[];
@@ -375,12 +389,15 @@ function CommitmentsSection() {
             </thead>
             <tbody className="divide-y divide-border">
               {data.map((c) => {
-                const amount = Number(c.paydown_amount ?? c.monthly_amount ?? 0);
+                const amount =
+                  c.commitment_type === 'debt_paydown' || c.commitment_type === 'allocate_savings'
+                    ? Number(c.paydown_amount ?? 0)
+                    : Number(c.monthly_amount ?? 0);
                 const canCancel = c.status === "active" || c.status === "pending";
                 return (
                   <tr key={c.id}>
                     <td className="px-4 py-2 text-muted-foreground">{c.commitment_type ?? "—"}</td>
-                    <td className="px-4 py-2 truncate max-w-[280px]">{c.description ?? "—"}</td>
+                    <td className="px-4 py-2 truncate max-w-[280px]">{getLabel(c)}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{amount ? formatINR(amount) : "—"}</td>
                     <td className="px-4 py-2"><StatusBadge status={c.status} /></td>
                     <td className="px-4 py-2 text-right">
