@@ -418,6 +418,19 @@ function LivePlan() {
               </div>
             )}
 
+            {/* Allocate savings cards (pending + confirmed) */}
+            {savingsCommitments.length > 0 && (
+              <div className="space-y-3">
+                {savingsCommitments.map((c) => (
+                  <AllocateSavingsCard
+                    key={c.id ?? `${c.savings_label}-${c.confirmed_at ?? "pending"}`}
+                    commitment={c}
+                    onConfirmed={() => refetch()}
+                  />
+                ))}
+              </div>
+            )}
+
             <div className="space-y-1.5">
               {grouped.map((g, i) => {
                 const isReduce = g.type === "reduce_discretionary";
