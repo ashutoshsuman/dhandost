@@ -312,7 +312,10 @@ function LivePlan() {
         }
 
         const debtCommitments = allCommitments.filter((c) => c.commitment_type === "debt_paydown");
-        const otherCommitments = allCommitments.filter((c) => c.commitment_type !== "debt_paydown");
+        const savingsCommitments = allCommitments.filter((c) => c.commitment_type === "allocate_savings");
+        const otherCommitments = allCommitments.filter(
+          (c) => c.commitment_type !== "debt_paydown" && c.commitment_type !== "allocate_savings",
+        );
         const debtMap = new Map((debtsList ?? []).map((d) => [d.id, d]));
         const resolveDebt = (commitment: ActiveCommitment) => {
           if (commitment.debt_id) {
