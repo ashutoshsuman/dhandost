@@ -900,3 +900,102 @@ function DebtPaydownCard({
     </div>
   );
 }
+
+function AllocateSavingsCard({
+  commitment,
+  onConfirmed,
+}: {
+  commitment: ActiveCommitment;
+  onConfirmed: () => void;
+}) {
+  const qc = useQueryClient();
+  const label = commitment.savings_label || "savings";
+  const amount = commitment.paydown_amount ?? 0;
+  const isConfirmed = commitment.status === "confirmed";
+
+  const confirm = useMutation({
+    mutationFn: async () => {
+      if (!commitment.id) throw new Error("Missing commitment id");
+      const { data, error } = await supabase.functions.invoke("confirm-savings-allocation", {
+        body: { commitment_id: commitment.id },
+      });
+      if (error) {
+        console.error("confirm-savings-allocation failed:", error);
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: async () => {
+      toast(`${label} updated — amount set aside.`);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["compute-plan"] }),
+        qc.invalidateQueries({ queryKey: ["active-commitments"] }),
+      ]);
+      onConfirmed();
+    },
+    onError: (err) => {
+      toast.error((err as Error).message || "Couldn't confirm allocation");
+    },
+  });
+
+  if (isConfirmed) {
+    return (
+      <div className="rounded-lg border border-success/30 bg-success/5 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/15">
+            <CheckCircle2 className="h-4 w-4 text-success" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-medium text-foreground">{label} — done</p>
+              <span className="inline-flex items-center rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success">
+                Done
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {fmtRupees(amount)} set aside to your {label}
+              {commitment.confirmed_at ? ` on ${fmtDMY(commitment.confirmed_at)}` : ""}.
+              <br />
+              This is now parked out of your spendable headroom.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/60">
+          <Banknote className="h-4 w-4 text-foreground" />
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <p className="text-sm font-medium text-foreground">Move to {label}</p>
+          <p className="text-sm text-muted-foreground">
+            {fmtRupees(amount)} earmarked for your {label}.
+            <br />
+            Mark as done once you&apos;ve moved the money — it will then be set aside from your spendable headroom.
+          </p>
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => confirm.mutate()}
+              disabled={confirm.isPending || !commitment.id}
+              className="inline-flex items-center gap-1.5 rounded-md bg-success px-3 py-1.5 text-sm font-medium text-success-foreground hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity cursor-pointer"
+            >
+              {confirm.isPending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Confirming…
+                </>
+              ) : (
+                "Mark as done"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
