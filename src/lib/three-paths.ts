@@ -12,6 +12,7 @@ export type GoalImpact = {
   goal_id?: string;
   goal_name: string;
   delta_text: string; // e.g. "5 weeks ahead"
+  delta_days?: number | null;
   new_status: "on_track" | "at_risk" | "behind" | string;
 };
 
