@@ -507,14 +507,6 @@ function LivePlan() {
           prefix="−"
           detail="Monthly savings needed across all active goals to stay on track."
         />
-        <BreakdownRow
-          label="Discretionary headroom"
-          amount={headroom}
-          prefix="="
-          highlight
-          detail="What remains after income minus fixed outflows and goal savings."
-        />
-      </section>
         {(data.total_parked_savings ?? 0) > 0 && (
           <BreakdownRow
             label="Parked savings"
@@ -523,6 +515,15 @@ function LivePlan() {
             detail="Money set aside to your emergency fund or investment via confirmed savings commitments. Already excluded from discretionary headroom."
           />
         )}
+        <BreakdownRow
+          label="Discretionary headroom"
+          amount={headroom}
+          prefix="="
+          highlight
+          detail="What remains after income minus fixed outflows and goal savings."
+        />
+      </section>
+
 
       {/* Debt */}
       {data.total_debt_balance > 0 && (
