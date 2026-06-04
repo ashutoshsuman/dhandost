@@ -324,12 +324,25 @@ function CommitmentsSection() {
   const qc = useQueryClient();
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const getLabel = (c: CommitmentRow) => {
+    if (c.commitment_type === 'debt_paydown') return `Debt paydown — ₹${c.paydown_amount?.toLocaleString('en-IN') ?? '—'}`;
+    if (c.commitment_type === 'allocate_savings') return `Park savings — ${c.savings_label ?? 'Savings'} ₹${c.paydown_amount?.toLocaleString('en-IN') ?? '—'}`;
+    if (c.commitment_type === 'reduce_discretionary') return `Cut discretionary — ₹${c.monthly_amount?.toLocaleString('en-IN') ?? '—'}/mo`;
+    if (c.commitment_type === 'delay_goal') return `Delay goal — ₹${c.monthly_amount?.toLocaleString('en-IN') ?? '—'}/mo`;
+    return c.commitment_type ?? '—';
+  };
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["dm-commitments"],
     queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) throw new Error("Not signed in");
       const { data, error } = await supabase
         .from("active_commitments")
-        .select("id, commitment_type, status, description, goal_id, debt_id, monthly_amount, paydown_amount")
+        .select("id, commitment_type, status, monthly_amount, paydown_amount, savings_label, goal_id, debt_id, created_at")
+        .eq("user_id", user.id)
+        .in("status", ["active", "pending"])
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as CommitmentRow[];
