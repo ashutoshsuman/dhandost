@@ -319,8 +319,8 @@ type CommitmentRow = {
   monthly_amount: number | null;
   paydown_amount: number | null;
   created_at: string;
-  goals?: { name: string } | null;
-  debts?: { name: string } | null;
+  goals?: { name: string }[] | null;
+  debts?: { name: string }[] | null;
 };
 
 function CommitmentsSection() {
