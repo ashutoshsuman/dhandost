@@ -423,7 +423,7 @@ function CommitmentsSection() {
                   <tr key={c.id}>
                     <td className="px-4 py-2 text-muted-foreground">{c.commitment_type ?? "—"}</td>
                     <td className="px-4 py-2 truncate max-w-[280px]">{getLabel(c)}</td>
-                    <td className="px-4 py-2 text-right tabular-nums">{amount ? formatINR(amount) : "—"}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{amountText}</td>
                     <td className="px-4 py-2"><StatusBadge status={c.status} /></td>
                     <td className="px-4 py-2 text-right">
                       {canCancel ? (
