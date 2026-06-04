@@ -45,7 +45,11 @@ type PlanGoal = {
 
 type ActiveCommitment = {
   id?: string;
-  commitment_type?: "reduce_discretionary" | "delay_goal" | "debt_paydown";
+  commitment_type?:
+    | "reduce_discretionary"
+    | "delay_goal"
+    | "debt_paydown"
+    | "allocate_savings";
   status?: "active" | "pending" | "confirmed" | string;
   goal_name?: string;
   goal_id?: string;
@@ -62,6 +66,8 @@ type ActiveCommitment = {
   balance_after?: number;
   confirmed_at?: string;
   interest_rate_annual?: number;
+  // Allocate savings fields
+  savings_label?: string;
 };
 
 const visibleCommitmentStatuses = new Set(["active", "pending", "confirmed"]);
@@ -75,6 +81,7 @@ type PlanResponse = {
   total_fixed_outflows: number;
   total_goal_savings_required: number;
   discretionary_headroom: number;
+  total_parked_savings?: number;
   total_committed_reductions?: number;
   projected_discretionary_headroom?: number;
   active_commitments?: ActiveCommitment[];
@@ -305,7 +312,10 @@ function LivePlan() {
         }
 
         const debtCommitments = allCommitments.filter((c) => c.commitment_type === "debt_paydown");
-        const otherCommitments = allCommitments.filter((c) => c.commitment_type !== "debt_paydown");
+        const savingsCommitments = allCommitments.filter((c) => c.commitment_type === "allocate_savings");
+        const otherCommitments = allCommitments.filter(
+          (c) => c.commitment_type !== "debt_paydown" && c.commitment_type !== "allocate_savings",
+        );
         const debtMap = new Map((debtsList ?? []).map((d) => [d.id, d]));
         const resolveDebt = (commitment: ActiveCommitment) => {
           if (commitment.debt_id) {
@@ -408,6 +418,19 @@ function LivePlan() {
               </div>
             )}
 
+            {/* Allocate savings cards (pending + confirmed) */}
+            {savingsCommitments.length > 0 && (
+              <div className="space-y-3">
+                {savingsCommitments.map((c) => (
+                  <AllocateSavingsCard
+                    key={c.id ?? `${c.savings_label}-${c.confirmed_at ?? "pending"}`}
+                    commitment={c}
+                    onConfirmed={() => refetch()}
+                  />
+                ))}
+              </div>
+            )}
+
             <div className="space-y-1.5">
               {grouped.map((g, i) => {
                 const isReduce = g.type === "reduce_discretionary";
@@ -484,6 +507,14 @@ function LivePlan() {
           prefix="−"
           detail="Monthly savings needed across all active goals to stay on track."
         />
+        {(data.total_parked_savings ?? 0) > 0 && (
+          <BreakdownRow
+            label="Parked savings"
+            amount={data.total_parked_savings ?? 0}
+            prefix="−"
+            detail="Money set aside to your emergency fund or investment via confirmed savings commitments. Already excluded from discretionary headroom."
+          />
+        )}
         <BreakdownRow
           label="Discretionary headroom"
           amount={headroom}
@@ -492,6 +523,7 @@ function LivePlan() {
           detail="What remains after income minus fixed outflows and goal savings."
         />
       </section>
+
 
       {/* Debt */}
       {data.total_debt_balance > 0 && (
@@ -860,6 +892,105 @@ function DebtPaydownCard({
                 </>
               ) : (
                 "Mark as paid"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AllocateSavingsCard({
+  commitment,
+  onConfirmed,
+}: {
+  commitment: ActiveCommitment;
+  onConfirmed: () => void;
+}) {
+  const qc = useQueryClient();
+  const label = commitment.savings_label || "savings";
+  const amount = commitment.paydown_amount ?? 0;
+  const isConfirmed = commitment.status === "confirmed";
+
+  const confirm = useMutation({
+    mutationFn: async () => {
+      if (!commitment.id) throw new Error("Missing commitment id");
+      const { data, error } = await supabase.functions.invoke("confirm-savings-allocation", {
+        body: { commitment_id: commitment.id },
+      });
+      if (error) {
+        console.error("confirm-savings-allocation failed:", error);
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: async () => {
+      toast(`${label} updated — amount set aside.`);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["compute-plan"] }),
+        qc.invalidateQueries({ queryKey: ["active-commitments"] }),
+      ]);
+      onConfirmed();
+    },
+    onError: (err) => {
+      toast.error((err as Error).message || "Couldn't confirm allocation");
+    },
+  });
+
+  if (isConfirmed) {
+    return (
+      <div className="rounded-lg border border-success/30 bg-success/5 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/15">
+            <CheckCircle2 className="h-4 w-4 text-success" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-medium text-foreground">{label} — done</p>
+              <span className="inline-flex items-center rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success">
+                Done
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {fmtRupees(amount)} set aside to your {label}
+              {commitment.confirmed_at ? ` on ${fmtDMY(commitment.confirmed_at)}` : ""}.
+              <br />
+              This is now parked out of your spendable headroom.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/60">
+          <Banknote className="h-4 w-4 text-foreground" />
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <p className="text-sm font-medium text-foreground">Move to {label}</p>
+          <p className="text-sm text-muted-foreground">
+            {fmtRupees(amount)} earmarked for your {label}.
+            <br />
+            Mark as done once you&apos;ve moved the money — it will then be set aside from your spendable headroom.
+          </p>
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => confirm.mutate()}
+              disabled={confirm.isPending || !commitment.id}
+              className="inline-flex items-center gap-1.5 rounded-md bg-success px-3 py-1.5 text-sm font-medium text-success-foreground hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity cursor-pointer"
+            >
+              {confirm.isPending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Confirming…
+                </>
+              ) : (
+                "Mark as done"
               )}
             </button>
           </div>

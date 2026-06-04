@@ -43,6 +43,8 @@ export type ThreePathsResponse = {
   trigger_description: string | null;
   path_selection_id?: string | null;
   trigger_transaction_id?: string | null;
+  needs_goal?: boolean;
+  message?: string;
 };
 
 const STORAGE_KEY = "three-paths-response";
