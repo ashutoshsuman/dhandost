@@ -64,6 +64,7 @@ function RootComponent() {
           <Outlet />
         </CoachProvider>
       </AuthGate>
+      <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }
