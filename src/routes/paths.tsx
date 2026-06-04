@@ -362,13 +362,32 @@ function PathCard({
       {path.allocation?.length > 0 && (
         <div>
           <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Allocation</div>
-          <ul className="space-y-1 text-sm">
-            {path.allocation.map((a, i) => (
-              <li key={i} className="tabular-nums">
-                {renderAllocation(a, path.debt_impact)}
-              </li>
-            ))}
+          <ul className="space-y-2 text-sm">
+            {path.allocation.map((a, i) => {
+              const r = renderAllocation(a, path.debt_impact);
+              return (
+                <li key={i} className="tabular-nums">
+                  <div>{r.primary}</div>
+                  {r.secondary && (
+                    <div className="text-xs text-muted-foreground pl-4 mt-0.5">
+                      {r.secondary}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
+          {(() => {
+            const delay = path.goal_impacts?.find(
+              (g) => typeof g.delta_days === "number" && (g.delta_days ?? 0) < 0,
+            );
+            if (!delay) return null;
+            return (
+              <p className="text-xs text-muted-foreground mt-2">
+                Trade-off: {delay.goal_name} arrives ~{Math.abs(delay.delta_days ?? 0)} days later.
+              </p>
+            );
+          })()}
         </div>
       )}
 
