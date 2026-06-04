@@ -313,11 +313,14 @@ type CommitmentRow = {
   commitment_type: string | null;
   status: string;
   savings_label: string | null;
+  category: string | null;
   goal_id: string | null;
   debt_id: string | null;
   monthly_amount: number | null;
   paydown_amount: number | null;
   created_at: string;
+  goals?: { name: string } | null;
+  debts?: { name: string } | null;
 };
 
 function CommitmentsSection() {
@@ -325,10 +328,17 @@ function CommitmentsSection() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const getLabel = (c: CommitmentRow) => {
-    if (c.commitment_type === 'debt_paydown') return `Debt paydown — ₹${c.paydown_amount?.toLocaleString('en-IN') ?? '—'}`;
-    if (c.commitment_type === 'allocate_savings') return `Park savings — ${c.savings_label ?? 'Savings'} ₹${c.paydown_amount?.toLocaleString('en-IN') ?? '—'}`;
-    if (c.commitment_type === 'reduce_discretionary') return `Cut discretionary — ₹${c.monthly_amount?.toLocaleString('en-IN') ?? '—'}/mo`;
-    if (c.commitment_type === 'delay_goal') return `Delay goal — ₹${c.monthly_amount?.toLocaleString('en-IN') ?? '—'}/mo`;
+    const goalName = c.goals?.name ?? 'Unknown goal';
+    const debtName = c.debts?.name ?? 'Unknown debt';
+    const amt = (val: number | null | undefined) => val != null ? `₹${Number(val).toLocaleString('en-IN')}` : '₹—';
+    if (c.commitment_type === 'delay_goal')
+      return `Delay goal · ${goalName}`;
+    if (c.commitment_type === 'reduce_discretionary')
+      return `Cut ${c.category ?? 'discretionary'} · ${amt(c.monthly_amount)}/mo`;
+    if (c.commitment_type === 'debt_paydown')
+      return `Pay down ${debtName} · ${amt(c.paydown_amount)}`;
+    if (c.commitment_type === 'allocate_savings')
+      return `Park savings · ${c.savings_label ?? 'Savings'} · ${amt(c.paydown_amount)}`;
     return c.commitment_type ?? '—';
   };
 
