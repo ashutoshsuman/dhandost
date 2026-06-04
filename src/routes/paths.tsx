@@ -38,21 +38,40 @@ function matchDebtImpact(
   );
 }
 
-function renderAllocation(a: AllocationStep, debtImpacts?: DebtImpact[]): string {
+function inr(n: number): string {
+  return `₹${Math.round(n).toLocaleString("en-IN")}`;
+}
+
+function renderAllocation(
+  a: AllocationStep,
+  debtImpacts?: DebtImpact[],
+): { primary: string; secondary?: string } {
   switch (a.action) {
     case "reduce_discretionary": {
       const monthly = a.monthly_amount ?? 0;
       const months = a.duration_months ?? 0;
       const total = a.amount ?? 0;
       if (!monthly || !months) {
-        return `→ Reduce ${a.target} by ${formatINR(total)}`;
+        return { primary: `→ Reduce ${a.target} by ${inr(total)}` };
       }
-      return `→ Reduce ${a.target} by ${formatINR(monthly)}/month for ${months} months (${formatINR(total)} total)`;
+      return {
+        primary: `→ Reduce ${a.target} by ${inr(monthly)}/month for ${months} months (${inr(total)} total)`,
+      };
     }
-    case "delay_goal":
-      return `→ Delay ${a.target}`;
+    case "delay_goal": {
+      const months = a.duration_months;
+      const monthly = a.monthly_amount;
+      const amount = a.amount;
+      if (!months || !monthly) {
+        return { primary: `→ Delay ${a.target}` };
+      }
+      return {
+        primary: `→ Delay ${a.target} by ${months} months`,
+        secondary: `Redirects ${inr(monthly)}/mo of saving · absorbs ${inr(amount ?? 0)}`,
+      };
+    }
     case "keep_flexible":
-      return `→ ${formatINR(a.amount)} kept as flexible buffer`;
+      return { primary: `→ ${inr(a.amount)} kept as flexible buffer` };
     case "pay_down_debt": {
       const impact = matchDebtImpact(debtImpacts, a.target);
       const name = impact?.debt_name ?? a.target;
@@ -62,13 +81,15 @@ function renderAllocation(a: AllocationStep, debtImpacts?: DebtImpact[]): string
       const rate = impact?.interest_rate_annual;
       const ratePart =
         rate != null ? ` @ ${Number(rate).toFixed(rate % 1 === 0 ? 0 : 2)}% p.a.` : "";
-      return `→ ${formatINR(a.amount)} toward ${name}. New balance would be ${formatINR(wouldBe)}${ratePart}`;
+      return {
+        primary: `→ ${inr(a.amount)} toward ${name}. New balance would be ${inr(wouldBe)}${ratePart}`,
+      };
     }
     case "topup_cushion":
-      return `→ ${formatINR(a.amount)} into ${a.target}`;
+      return { primary: `→ ${inr(a.amount)} into ${a.target}` };
     case "fund_goal":
     default:
-      return `→ ${formatINR(a.amount)} into ${a.target}`;
+      return { primary: `→ ${inr(a.amount)} into ${a.target}` };
   }
 }
 
@@ -341,13 +362,32 @@ function PathCard({
       {path.allocation?.length > 0 && (
         <div>
           <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Allocation</div>
-          <ul className="space-y-1 text-sm">
-            {path.allocation.map((a, i) => (
-              <li key={i} className="tabular-nums">
-                {renderAllocation(a, path.debt_impact)}
-              </li>
-            ))}
+          <ul className="space-y-2 text-sm">
+            {path.allocation.map((a, i) => {
+              const r = renderAllocation(a, path.debt_impact);
+              return (
+                <li key={i} className="tabular-nums">
+                  <div>{r.primary}</div>
+                  {r.secondary && (
+                    <div className="text-xs text-muted-foreground pl-4 mt-0.5">
+                      {r.secondary}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
+          {(() => {
+            const delay = path.goal_impacts?.find(
+              (g) => typeof g.delta_days === "number" && (g.delta_days ?? 0) < 0,
+            );
+            if (!delay) return null;
+            return (
+              <p className="text-xs text-muted-foreground mt-2">
+                Trade-off: {delay.goal_name} arrives ~{Math.abs(delay.delta_days ?? 0)} days later.
+              </p>
+            );
+          })()}
         </div>
       )}
 
