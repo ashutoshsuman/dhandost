@@ -313,11 +313,14 @@ type CommitmentRow = {
   commitment_type: string | null;
   status: string;
   savings_label: string | null;
+  category: string | null;
   goal_id: string | null;
   debt_id: string | null;
   monthly_amount: number | null;
   paydown_amount: number | null;
   created_at: string;
+  goals?: { name: string }[] | null;
+  debts?: { name: string }[] | null;
 };
 
 function CommitmentsSection() {
@@ -325,10 +328,17 @@ function CommitmentsSection() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const getLabel = (c: CommitmentRow) => {
-    if (c.commitment_type === 'debt_paydown') return `Debt paydown — ₹${c.paydown_amount?.toLocaleString('en-IN') ?? '—'}`;
-    if (c.commitment_type === 'allocate_savings') return `Park savings — ${c.savings_label ?? 'Savings'} ₹${c.paydown_amount?.toLocaleString('en-IN') ?? '—'}`;
-    if (c.commitment_type === 'reduce_discretionary') return `Cut discretionary — ₹${c.monthly_amount?.toLocaleString('en-IN') ?? '—'}/mo`;
-    if (c.commitment_type === 'delay_goal') return `Delay goal — ₹${c.monthly_amount?.toLocaleString('en-IN') ?? '—'}/mo`;
+    const goalName = c.goals?.[0]?.name ?? 'Unknown goal';
+    const debtName = c.debts?.[0]?.name ?? 'Unknown debt';
+    const amt = (val: number | null | undefined) => val != null ? `₹${Number(val).toLocaleString('en-IN')}` : '₹—';
+    if (c.commitment_type === 'delay_goal')
+      return `Delay goal · ${goalName}`;
+    if (c.commitment_type === 'reduce_discretionary')
+      return `Cut ${c.category ?? 'discretionary'} · ${amt(c.monthly_amount)}/mo`;
+    if (c.commitment_type === 'debt_paydown')
+      return `Pay down ${debtName} · ${amt(c.paydown_amount)}`;
+    if (c.commitment_type === 'allocate_savings')
+      return `Park savings · ${c.savings_label ?? 'Savings'} · ${amt(c.paydown_amount)}`;
     return c.commitment_type ?? '—';
   };
 
@@ -340,7 +350,20 @@ function CommitmentsSection() {
       if (!user) throw new Error("Not signed in");
       const { data, error } = await supabase
         .from("active_commitments")
-        .select("id, commitment_type, status, monthly_amount, paydown_amount, savings_label, goal_id, debt_id, created_at")
+        .select(`
+          id,
+          commitment_type,
+          status,
+          monthly_amount,
+          paydown_amount,
+          savings_label,
+          category,
+          goal_id,
+          debt_id,
+          created_at,
+          goals ( name ),
+          debts ( name )
+        `)
         .eq("user_id", user.id)
         .in("status", ["active", "pending"])
         .order("created_at", { ascending: false });
@@ -381,7 +404,7 @@ function CommitmentsSection() {
             <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="text-left px-4 py-2 font-medium">Type</th>
-                <th className="text-left px-4 py-2 font-medium">Description</th>
+                <th className="text-left px-4 py-2 font-medium">Commitment</th>
                 <th className="text-right px-4 py-2 font-medium">Amount</th>
                 <th className="text-left px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2"></th>
@@ -389,16 +412,18 @@ function CommitmentsSection() {
             </thead>
             <tbody className="divide-y divide-border">
               {data.map((c) => {
-                const amount =
-                  c.commitment_type === 'debt_paydown' || c.commitment_type === 'allocate_savings'
-                    ? Number(c.paydown_amount ?? 0)
-                    : Number(c.monthly_amount ?? 0);
+                let amountText = "—";
+                if (c.commitment_type === 'debt_paydown' || c.commitment_type === 'allocate_savings') {
+                  amountText = c.paydown_amount != null ? `₹${Number(c.paydown_amount).toLocaleString('en-IN')}` : '₹—';
+                } else if (c.commitment_type === 'delay_goal' || c.commitment_type === 'reduce_discretionary') {
+                  amountText = c.monthly_amount != null ? `₹${Number(c.monthly_amount).toLocaleString('en-IN')}/mo` : '₹—';
+                }
                 const canCancel = c.status === "active" || c.status === "pending";
                 return (
                   <tr key={c.id}>
                     <td className="px-4 py-2 text-muted-foreground">{c.commitment_type ?? "—"}</td>
                     <td className="px-4 py-2 truncate max-w-[280px]">{getLabel(c)}</td>
-                    <td className="px-4 py-2 text-right tabular-nums">{amount ? formatINR(amount) : "—"}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{amountText}</td>
                     <td className="px-4 py-2"><StatusBadge status={c.status} /></td>
                     <td className="px-4 py-2 text-right">
                       {canCancel ? (
