@@ -328,8 +328,8 @@ function CommitmentsSection() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const getLabel = (c: CommitmentRow) => {
-    const goalName = c.goals?.name ?? 'Unknown goal';
-    const debtName = c.debts?.name ?? 'Unknown debt';
+    const goalName = c.goals?.[0]?.name ?? 'Unknown goal';
+    const debtName = c.debts?.[0]?.name ?? 'Unknown debt';
     const amt = (val: number | null | undefined) => val != null ? `₹${Number(val).toLocaleString('en-IN')}` : '₹—';
     if (c.commitment_type === 'delay_goal')
       return `Delay goal · ${goalName}`;
