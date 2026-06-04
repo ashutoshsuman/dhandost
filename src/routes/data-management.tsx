@@ -389,12 +389,15 @@ function CommitmentsSection() {
             </thead>
             <tbody className="divide-y divide-border">
               {data.map((c) => {
-                const amount = Number(c.paydown_amount ?? c.monthly_amount ?? 0);
+                const amount =
+                  c.commitment_type === 'debt_paydown' || c.commitment_type === 'allocate_savings'
+                    ? Number(c.paydown_amount ?? 0)
+                    : Number(c.monthly_amount ?? 0);
                 const canCancel = c.status === "active" || c.status === "pending";
                 return (
                   <tr key={c.id}>
                     <td className="px-4 py-2 text-muted-foreground">{c.commitment_type ?? "—"}</td>
-                    <td className="px-4 py-2 truncate max-w-[280px]">{c.description ?? "—"}</td>
+                    <td className="px-4 py-2 truncate max-w-[280px]">{getLabel(c)}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{amount ? formatINR(amount) : "—"}</td>
                     <td className="px-4 py-2"><StatusBadge status={c.status} /></td>
                     <td className="px-4 py-2 text-right">
