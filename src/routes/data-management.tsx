@@ -312,11 +312,12 @@ type CommitmentRow = {
   id: string;
   commitment_type: string | null;
   status: string;
-  description: string | null;
+  savings_label: string | null;
   goal_id: string | null;
   debt_id: string | null;
   monthly_amount: number | null;
   paydown_amount: number | null;
+  created_at: string;
 };
 
 function CommitmentsSection() {
