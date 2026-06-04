@@ -350,7 +350,20 @@ function CommitmentsSection() {
       if (!user) throw new Error("Not signed in");
       const { data, error } = await supabase
         .from("active_commitments")
-        .select("id, commitment_type, status, monthly_amount, paydown_amount, savings_label, goal_id, debt_id, created_at")
+        .select(`
+          id,
+          commitment_type,
+          status,
+          monthly_amount,
+          paydown_amount,
+          savings_label,
+          category,
+          goal_id,
+          debt_id,
+          created_at,
+          goals ( name ),
+          debts ( name )
+        `)
         .eq("user_id", user.id)
         .in("status", ["active", "pending"])
         .order("created_at", { ascending: false });
