@@ -16,6 +16,7 @@ import { Route as ImportRouteImport } from './routes/import'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as FixedRouteImport } from './routes/fixed'
 import { Route as DebtsRouteImport } from './routes/debts'
+import { Route as DataManagementRouteImport } from './routes/data-management'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicMoveGoalFundsRouteImport } from './routes/api/public/move-goal-funds'
@@ -55,6 +56,11 @@ const DebtsRoute = DebtsRouteImport.update({
   path: '/debts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DataManagementRoute = DataManagementRouteImport.update({
+  id: '/data-management',
+  path: '/data-management',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -74,6 +80,7 @@ const ApiPublicMoveGoalFundsRoute = ApiPublicMoveGoalFundsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/data-management': typeof DataManagementRoute
   '/debts': typeof DebtsRoute
   '/fixed': typeof FixedRoute
   '/goals': typeof GoalsRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/data-management': typeof DataManagementRoute
   '/debts': typeof DebtsRoute
   '/fixed': typeof FixedRoute
   '/goals': typeof GoalsRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/data-management': typeof DataManagementRoute
   '/debts': typeof DebtsRoute
   '/fixed': typeof FixedRoute
   '/goals': typeof GoalsRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/chat'
+    | '/data-management'
     | '/debts'
     | '/fixed'
     | '/goals'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/chat'
+    | '/data-management'
     | '/debts'
     | '/fixed'
     | '/goals'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/chat'
+    | '/data-management'
     | '/debts'
     | '/fixed'
     | '/goals'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatRoute: typeof ChatRoute
+  DataManagementRoute: typeof DataManagementRoute
   DebtsRoute: typeof DebtsRoute
   FixedRoute: typeof FixedRoute
   GoalsRoute: typeof GoalsRoute
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DebtsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/data-management': {
+      id: '/data-management'
+      path: '/data-management'
+      fullPath: '/data-management'
+      preLoaderRoute: typeof DataManagementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat': {
       id: '/chat'
       path: '/chat'
@@ -238,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChatRoute: ChatRoute,
+  DataManagementRoute: DataManagementRoute,
   DebtsRoute: DebtsRoute,
   FixedRoute: FixedRoute,
   GoalsRoute: GoalsRoute,

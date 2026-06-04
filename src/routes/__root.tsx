@@ -9,6 +9,7 @@ import {
 import appCss from "../styles.css?url";
 import { CoachProvider } from "@/components/coach/CoachContext";
 import { AuthGate } from "@/components/auth/AuthGate";
+import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -63,6 +64,7 @@ function RootComponent() {
           <Outlet />
         </CoachProvider>
       </AuthGate>
+      <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }

@@ -14,6 +14,7 @@ const nav = [
   { to: "/fixed", label: "Fixed Expenses" },
   { to: "/debts", label: "Debts" },
   { to: "/chat", label: "Chat" },
+  { to: "/data-management", label: "Data" },
 ];
 
 export function Layout({ children }: { children?: React.ReactNode }) {
