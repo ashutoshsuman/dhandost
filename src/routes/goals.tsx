@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { supabase, type Goal } from "@/lib/supabase";
+import { invokeFn } from "@/lib/invokeFn";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input } from "@/components/ui-primitives";
 import {
@@ -58,8 +59,7 @@ function GoalsPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("goals").delete().eq("id", id);
-      if (error) throw error;
+      await invokeFn("delete-goal", { goal_id: id, confirmed: true });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goals"] });
