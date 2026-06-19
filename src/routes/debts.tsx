@@ -6,6 +6,16 @@ import { supabase } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
 import { formatINR } from "@/lib/format";
 import { Button, Field, Input } from "@/components/ui-primitives";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/debts")({
   component: () => (
@@ -26,6 +36,7 @@ type Debt = {
 function DebtsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Debt | null>(null);
 
   const { data } = useQuery({
     queryKey: ["debts"],
@@ -43,7 +54,10 @@ function DebtsPage() {
     mutationFn: async (id: string) => {
       await invokeFn("delete-debt", { debt_id: id, confirmed: true });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["debts"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["debts"] });
+      setConfirmDelete(null);
+    },
   });
 
   const total = (data ?? []).reduce((s, d) => s + Number(d.balance), 0);
@@ -83,13 +97,43 @@ function DebtsPage() {
                 <td className="px-4 py-2.5 text-right tabular-nums font-medium">{formatINR(d.balance)}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{Number(d.interest_rate_annual).toFixed(2)}%</td>
                 <td className="px-4 py-2.5 text-right">
-                  <Button variant="destructive" onClick={() => del.mutate(d.id)}>Delete</Button>
+                  <Button variant="destructive" onClick={() => setConfirmDelete(d)}>Delete</Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => { if (!o && !del.isPending) setConfirmDelete(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this debt?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this debt
+              {confirmDelete?.name ? ` "${confirmDelete.name}"` : ""}
+              {confirmDelete ? ` with balance ${formatINR(confirmDelete.balance)}` : ""}
+              {confirmDelete ? ` and interest rate ${Number(confirmDelete.interest_rate_annual).toFixed(2)}% p.a.` : ""}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={del.isPending} className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={del.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmDelete) del.mutate(confirmDelete.id);
+              }}
+              className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {del.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
