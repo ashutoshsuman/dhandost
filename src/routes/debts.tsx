@@ -41,8 +41,7 @@ function DebtsPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("debts").delete().eq("id", id);
-      if (error) throw error;
+      await invokeFn("delete-debt", { debt_id: id, confirmed: true });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["debts"] }),
   });
