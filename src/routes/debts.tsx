@@ -6,6 +6,16 @@ import { supabase } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
 import { formatINR } from "@/lib/format";
 import { Button, Field, Input } from "@/components/ui-primitives";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/debts")({
   component: () => (
