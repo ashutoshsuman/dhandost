@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/lib/supabase";
+import { invokeFn } from "@/lib/invokeFn";
 import { formatINR } from "@/lib/format";
 import { Button, Field, Input } from "@/components/ui-primitives";
 
@@ -40,8 +41,7 @@ function DebtsPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("debts").delete().eq("id", id);
-      if (error) throw error;
+      await invokeFn("delete-debt", { debt_id: id, confirmed: true });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["debts"] }),
   });
