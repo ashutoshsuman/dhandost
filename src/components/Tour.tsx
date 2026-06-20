@@ -168,11 +168,13 @@ export function TourProvider({ children }: { children: ReactNode }) {
         setDropdownOpen(false);
       }
       if (next.target !== "body") {
-        const found = await waitForTarget(next.target, 3000);
+        const found = await waitForTarget(next.target, 5000);
         if (!found) {
-          console.warn(`Tour: target "${next.target}" not found after 3s`);
+          console.warn(`Tour: target "${next.target}" not found after 5s`);
         }
       }
+      window.scrollTo({ top: 0, behavior: "instant" });
+      await waitFrame();
       await waitFrame();
       setStepIndex(nextIndex);
     },
