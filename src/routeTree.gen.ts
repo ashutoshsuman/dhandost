@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PathsRouteImport } from './routes/paths'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as GoalsRouteImport } from './routes/goals'
@@ -29,6 +30,11 @@ const TransactionsRoute = TransactionsRouteImport.update({
 const ReviewRoute = ReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PathsRoute = PathsRouteImport.update({
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/import': typeof ImportRoute
   '/paths': typeof PathsRoute
+  '/profile': typeof ProfileRoute
   '/review': typeof ReviewRoute
   '/transactions': typeof TransactionsRoute
   '/api/public/move-goal-funds': typeof ApiPublicMoveGoalFundsRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/import': typeof ImportRoute
   '/paths': typeof PathsRoute
+  '/profile': typeof ProfileRoute
   '/review': typeof ReviewRoute
   '/transactions': typeof TransactionsRoute
   '/api/public/move-goal-funds': typeof ApiPublicMoveGoalFundsRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/import': typeof ImportRoute
   '/paths': typeof PathsRoute
+  '/profile': typeof ProfileRoute
   '/review': typeof ReviewRoute
   '/transactions': typeof TransactionsRoute
   '/api/public/move-goal-funds': typeof ApiPublicMoveGoalFundsRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/import'
     | '/paths'
+    | '/profile'
     | '/review'
     | '/transactions'
     | '/api/public/move-goal-funds'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/import'
     | '/paths'
+    | '/profile'
     | '/review'
     | '/transactions'
     | '/api/public/move-goal-funds'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/import'
     | '/paths'
+    | '/profile'
     | '/review'
     | '/transactions'
     | '/api/public/move-goal-funds'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   GoalsRoute: typeof GoalsRoute
   ImportRoute: typeof ImportRoute
   PathsRoute: typeof PathsRoute
+  ProfileRoute: typeof ProfileRoute
   ReviewRoute: typeof ReviewRoute
   TransactionsRoute: typeof TransactionsRoute
   ApiPublicMoveGoalFundsRoute: typeof ApiPublicMoveGoalFundsRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/paths': {
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoalsRoute: GoalsRoute,
   ImportRoute: ImportRoute,
   PathsRoute: PathsRoute,
+  ProfileRoute: ProfileRoute,
   ReviewRoute: ReviewRoute,
   TransactionsRoute: TransactionsRoute,
   ApiPublicMoveGoalFundsRoute: ApiPublicMoveGoalFundsRoute,
