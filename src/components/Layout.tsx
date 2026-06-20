@@ -7,6 +7,7 @@ const logo = logoAsset.url;
 import { supabase } from "@/lib/supabase";
 import { TrustBadge } from "@/components/TrustBadge";
 import { CoachLauncher } from "@/components/coach/CoachLauncher";
+import { useTour } from "@/components/Tour";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,18 +15,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const nav = [
+const nav: { to: string; label: string; tour?: string }[] = [
   { to: "/", label: "Live Plan" },
   { to: "/transactions", label: "Transactions" },
-  { to: "/review", label: "Review" },
-  { to: "/goals", label: "Goals" },
-  { to: "/fixed", label: "Fixed Expenses" },
-  { to: "/debts", label: "Debts" },
-  { to: "/chat", label: "Chat" },
+  { to: "/review", label: "Review", tour: "nav-review" },
+  { to: "/goals", label: "Goals", tour: "nav-goals" },
+  { to: "/fixed", label: "Fixed Expenses", tour: "nav-fixed-expenses" },
+  { to: "/debts", label: "Debts", tour: "nav-debts" },
+  { to: "/chat", label: "Chat", tour: "nav-chat" },
 ];
 
 function UserMenu() {
   const [firstName, setFirstName] = useState<string>("");
+  const [localOpen, setLocalOpen] = useState(false);
+  const tour = useTour();
+  const open = localOpen || tour.dropdownOpen;
 
   useEffect(() => {
     let mounted = true;
@@ -55,21 +59,47 @@ function UserMenu() {
   }, []);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      open={open}
+      onOpenChange={(o) => {
+        setLocalOpen(o);
+        if (!o) tour.setDropdownOpen(false);
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          data-tour="profile-dropdown"
           className="flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer transition-colors data-[state=open]:bg-secondary data-[state=open]:text-foreground"
         >
           Hi, {firstName || "there"}
           <ChevronDown className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[140px]">
-        <DropdownMenuItem asChild className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground">
+      <DropdownMenuContent align="end" className="min-w-[160px]">
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            setLocalOpen(false);
+            tour.setDropdownOpen(false);
+            tour.start();
+          }}
+          className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground"
+        >
+          Take a Tour
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          asChild
+          data-tour="dropdown-profile"
+          className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground"
+        >
           <Link to="/profile">Profile</Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground">
+        <DropdownMenuItem
+          asChild
+          data-tour="dropdown-data"
+          className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground"
+        >
           <Link to="/data-management">Data</Link>
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -82,6 +112,7 @@ function UserMenu() {
     </DropdownMenu>
   );
 }
+
 
 export function Layout({ children }: { children?: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
