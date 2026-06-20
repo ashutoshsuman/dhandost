@@ -35,12 +35,14 @@ const STEPS: StepDef[] = [
   {
     tab: "/transactions",
     target: '[data-tour="add-transaction"]',
+    placement: "bottom",
     content:
       "Start here. Add transactions manually or upload a bank statement CSV. If any transaction is a surprise — an unplanned expense or extra income — click 'Help me with a plan' on that row, and DhanDost will map three ways to absorb it without derailing your goals.",
   },
   {
     tab: "/",
     target: '[data-tour="live-plan-overview"]',
+    placement: "bottom",
     content:
       "Once your data's in, this is your month at a glance. If a category runs over budget, you'll see the same plan-help option appear here too.",
   },
@@ -103,6 +105,15 @@ const waitFrame = () =>
     requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
   );
 
+async function waitForTarget(selector: string, timeoutMs = 1500): Promise<boolean> {
+  const start = performance.now();
+  while (performance.now() - start < timeoutMs) {
+    if (document.querySelector(selector)) return true;
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  }
+  return false;
+}
+
 export function TourProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [run, setRun] = useState(false);
@@ -151,14 +162,24 @@ export function TourProvider({ children }: { children: ReactNode }) {
         await navigate({ to: next.tab });
       }
       const needsDropdown = nextIndex === 8 || nextIndex === 9;
-      setDropdownOpen(needsDropdown);
-      await waitFrame();
-      // a second frame helps after route transitions/dropdown portal mount
-      await waitFrame();
+      if (needsDropdown) {
+        // Open dropdown first, then wait for the menu item to actually be
+        // in the DOM (Radix portal + animation) before advancing Joyride —
+        // otherwise Joyride measures against a missing target and flashes
+        // at the page's top-left.
+        setDropdownOpen(true);
+        await waitForTarget(next.target, 1500);
+        await waitFrame();
+      } else {
+        if (dropdownOpen) setDropdownOpen(false);
+        await waitFrame();
+        await waitFrame();
+      }
       setStepIndex(nextIndex);
     },
-    [navigate],
+    [navigate, dropdownOpen],
   );
+
 
   const handleEvent = (data: EventData) => {
     const { status, type, index, action } = data;
