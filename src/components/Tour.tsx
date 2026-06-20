@@ -7,11 +7,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import Joyride, {
+import {
   ACTIONS,
   EVENTS,
+  Joyride,
   STATUS,
-  type CallBackProps,
+  type EventData,
   type Step,
 } from "react-joyride";
 import { useNavigate } from "@tanstack/react-router";
