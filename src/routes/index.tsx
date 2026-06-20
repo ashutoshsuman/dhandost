@@ -242,7 +242,7 @@ function LivePlan() {
       <VariableSpendingTracker />
       <SpendingInsights />
       {/* Financial Snapshot KPIs */}
-      <section data-tour="live-plan-overview" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Current Headroom */}
         <div className="rounded-xl border border-border bg-card p-5 text-center">
           <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
@@ -488,7 +488,7 @@ function LivePlan() {
       })()}
 
       {/* Breakdown */}
-      <section className="rounded-xl border border-border bg-card divide-y divide-border">
+      <section data-tour="live-plan-overview" className="rounded-xl border border-border bg-card divide-y divide-border">
         <BreakdownRow
           label="Expected monthly income"
           amount={data.expected_monthly_income}

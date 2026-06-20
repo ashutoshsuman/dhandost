@@ -168,11 +168,13 @@ export function TourProvider({ children }: { children: ReactNode }) {
         setDropdownOpen(false);
       }
       if (next.target !== "body") {
-        const found = await waitForTarget(next.target, 3000);
+        const found = await waitForTarget(next.target, 5000);
         if (!found) {
-          console.warn(`Tour: target "${next.target}" not found after 3s`);
+          console.warn(`Tour: target "${next.target}" not found after 5s`);
         }
       }
+      window.scrollTo({ top: 0, behavior: "instant" });
+      await waitFrame();
       await waitFrame();
       setStepIndex(nextIndex);
     },
@@ -224,11 +226,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
     <TourContext.Provider value={{ start, dropdownOpen, setDropdownOpen }}>
       {children}
       <Joyride
+        key={`tour-step-${stepIndex}`}
         steps={joyrideSteps}
         run={run}
         stepIndex={stepIndex}
         continuous
-        scrollToFirstStep
+        scrollToFirstStep={false}
         onEvent={handleEvent}
         options={{
           primaryColor: "oklch(0.58 0.12 162)",
