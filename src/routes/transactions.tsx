@@ -84,8 +84,8 @@ function TransactionsPage() {
           <h1 className="text-2xl font-semibold">Transactions</h1>
           <p className="text-sm text-muted-foreground mt-1">{txs?.length ?? 0} entries</p>
         </div>
-        <div className="flex gap-2">
-          <Button data-tour="add-transaction" onClick={() => setOpen(true)}>Add Manual Transaction</Button>
+        <div data-tour="add-transaction" className="flex gap-2">
+          <Button onClick={() => setOpen(true)}>Add Manual Transaction</Button>
           <Link
             to="/import"
             data-tour="upload-csv"
