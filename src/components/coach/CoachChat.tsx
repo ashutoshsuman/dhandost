@@ -70,17 +70,18 @@ export function CoachChat({
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, pending]);
 
-  async function send(text: string) {
+  async function send(text: string, isSuggestedPrompt = false) {
     const message = text.trim();
     if (!message || pending) return;
 
     const effectiveConversationId = conversationId || fallbackConversationId.current;
-    window.pendo?.trackAgent("prompt", {
-      agentId: "st4LAddSuBh5CnDeNJ9LW-isuiM",
+
+    window.pendo.trackAgent("prompt", {
+      agentId: "XjGJFdon0Cx3dw_LLxyvPgQEhEk",
       conversationId: effectiveConversationId,
       messageId: crypto.randomUUID(),
       content: message,
-      suggestedPrompt: STARTERS.includes(message),
+      suggestedPrompt: isSuggestedPrompt,
     });
 
     const previousMessages = messages;
@@ -113,17 +114,18 @@ export function CoachChat({
       } else {
         if (response.conversation_id) setConversationId(response.conversation_id);
         const replyText = stripRepeatedPriorOpening(response.reply ?? "", previousMessages);
-        const replyContent = replyText || "Something went wrong — please try again.";
-        window.pendo?.trackAgent("agent_response", {
-          agentId: "st4LAddSuBh5CnDeNJ9LW-isuiM",
-          conversationId: response.conversation_id || effectiveConversationId,
-          messageId: crypto.randomUUID(),
-          content: replyContent,
-        });
+        const responseContent = replyText || "Something went wrong — please try again.";
         setMessages((m) => [
           ...m,
-          { role: "assistant", content: replyContent },
+          { role: "assistant", content: responseContent },
         ]);
+
+        window.pendo.trackAgent("agent_response", {
+          agentId: "XjGJFdon0Cx3dw_LLxyvPgQEhEk",
+          conversationId: response.conversation_id || effectiveConversationId,
+          messageId: crypto.randomUUID(),
+          content: responseContent,
+        });
       }
     } catch (e) {
       console.error("financial-chat failed", e);
@@ -162,7 +164,7 @@ export function CoachChat({
                 <button
                   key={s}
                   type="button"
-                  onClick={() => send(s)}
+                  onClick={() => send(s, true)}
                   className="text-left px-3 py-2 rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors text-sm cursor-pointer"
                 >
                   {s}
