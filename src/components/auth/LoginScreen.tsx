@@ -183,7 +183,7 @@ export function LoginScreen({
               {status === "sending" ? "Sending…" : "Send login link"}
             </button>
             <p className="text-xs text-center text-muted-foreground">
-              Private & Secure — your data is safe with us
+              🔒 Private & Secure — your data is safe with us
             </p>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </form>
