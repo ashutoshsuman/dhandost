@@ -22,7 +22,6 @@ const nav = [
   { to: "/fixed", label: "Fixed Expenses" },
   { to: "/debts", label: "Debts" },
   { to: "/chat", label: "Chat" },
-  { to: "/data-management", label: "Data" },
 ];
 
 function UserMenu() {
@@ -69,6 +68,9 @@ function UserMenu() {
       <DropdownMenuContent align="end" className="min-w-[140px]">
         <DropdownMenuItem asChild className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground">
           <Link to="/profile">Profile</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground">
+          <Link to="/data-management">Data</Link>
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => supabase.auth.signOut()}
