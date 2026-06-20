@@ -116,7 +116,7 @@ function UserMenu() {
           <Link to="/data-management">Data</Link>
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => supabase.auth.signOut()}
+          onSelect={() => { pendo.clearSession(); supabase.auth.signOut(); }}
           className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground"
         >
           Sign out
