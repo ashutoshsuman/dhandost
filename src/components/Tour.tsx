@@ -232,7 +232,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
         stepIndex={stepIndex}
         continuous
         scrollToFirstStep={false}
-        disableScrolling
         onEvent={handleEvent}
         options={{
           primaryColor: "oklch(0.58 0.12 162)",
