@@ -59,6 +59,7 @@ export function CoachChat({
   const [pending, setPending] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fallbackConversationId = useRef(crypto.randomUUID());
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
@@ -72,6 +73,16 @@ export function CoachChat({
   async function send(text: string) {
     const message = text.trim();
     if (!message || pending) return;
+
+    const effectiveConversationId = conversationId || fallbackConversationId.current;
+    window.pendo?.trackAgent("prompt", {
+      agentId: "st4LAddSuBh5CnDeNJ9LW-isuiM",
+      conversationId: effectiveConversationId,
+      messageId: crypto.randomUUID(),
+      content: message,
+      suggestedPrompt: STARTERS.includes(message),
+    });
+
     const previousMessages = messages;
     setInput("");
     setMessages((m) => [...m, { role: "user", content: message }]);
@@ -102,12 +113,16 @@ export function CoachChat({
       } else {
         if (response.conversation_id) setConversationId(response.conversation_id);
         const replyText = stripRepeatedPriorOpening(response.reply ?? "", previousMessages);
+        const replyContent = replyText || "Something went wrong — please try again.";
+        window.pendo?.trackAgent("agent_response", {
+          agentId: "st4LAddSuBh5CnDeNJ9LW-isuiM",
+          conversationId: response.conversation_id || effectiveConversationId,
+          messageId: crypto.randomUUID(),
+          content: replyContent,
+        });
         setMessages((m) => [
           ...m,
-          {
-            role: "assistant",
-            content: replyText || "Something went wrong — please try again.",
-          },
+          { role: "assistant", content: replyContent },
         ]);
       }
     } catch (e) {
