@@ -232,7 +232,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
         stepIndex={stepIndex}
         continuous
         scrollToFirstStep={false}
-        spotlightClicks={false}
         disableScrolling
         onEvent={handleEvent}
         options={{
