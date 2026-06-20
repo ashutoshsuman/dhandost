@@ -11,10 +11,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    async function checkProfile(userId: string) {
+    async function checkProfile(userId: string, email: string | undefined) {
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("full_name, has_completed_tour")
         .eq("user_id", userId)
         .single();
       if (!mounted) return;
@@ -23,14 +23,25 @@ export function AuthGate({ children }: { children: ReactNode }) {
         setNeedsName(true);
         return;
       }
-      setNeedsName(profile?.full_name ? false : true);
+      const hasName = !!profile?.full_name;
+      setNeedsName(!hasName);
+      if (hasName) {
+        pendo.identify({
+          visitor: {
+            id: userId,
+            email: email ?? '',
+            full_name: profile.full_name,
+            has_completed_tour: profile.has_completed_tour ?? false,
+          },
+        });
+      }
     }
 
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setSession(data.session);
       if (data.session?.user?.id) {
-        checkProfile(data.session.user.id).then(() => setReady(true));
+        checkProfile(data.session.user.id, data.session.user.email).then(() => setReady(true));
       } else {
         setNeedsName(false);
         setReady(true);
@@ -41,7 +52,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       if (!mounted) return;
       setSession(s);
       if (s?.user?.id) {
-        await checkProfile(s.user.id);
+        await checkProfile(s.user.id, s.user.email);
       } else {
         setNeedsName(false);
       }
@@ -58,7 +69,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if (!session?.user?.id) return;
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("full_name")
+      .select("full_name, has_completed_tour")
       .eq("user_id", session.user.id)
       .single();
     if (profileError) {
@@ -66,7 +77,18 @@ export function AuthGate({ children }: { children: ReactNode }) {
       setNeedsName(false);
       return;
     }
-    setNeedsName(profile?.full_name ? false : true);
+    const hasName = !!profile?.full_name;
+    setNeedsName(!hasName);
+    if (hasName) {
+      pendo.identify({
+        visitor: {
+          id: session.user.id,
+          email: session.user.email ?? '',
+          full_name: profile.full_name,
+          has_completed_tour: profile.has_completed_tour ?? false,
+        },
+      });
+    }
   }
 
   if (!ready || needsName === null) {
