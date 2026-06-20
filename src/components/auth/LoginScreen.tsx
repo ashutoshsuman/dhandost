@@ -1,10 +1,26 @@
 import { useState, type FormEvent } from "react";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
-export function LoginScreen() {
+type LoginScreenMode = "send-link" | "name-capture";
+
+export function LoginScreen({
+  mode = "send-link",
+  user,
+  onProfileUpdated,
+}: {
+  mode?: LoginScreenMode;
+  user?: User;
+  onProfileUpdated?: () => void;
+}) {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "sending" | "sent" | "error" | "updating"
+  >("idle");
   const [error, setError] = useState<string | null>(null);
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,6 +42,24 @@ export function LoginScreen() {
     setStatus("sent");
   }
 
+  async function onNameSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!firstName.trim() || !lastName.trim() || !user) return;
+    setStatus("updating");
+    setError(null);
+    const combinedName = `${firstName.trim()} ${lastName.trim()}`;
+    const { error: err } = await supabase
+      .from("profiles")
+      .update({ full_name: combinedName })
+      .eq("user_id", user.id);
+    if (err) {
+      setStatus("error");
+      setError("Couldn't save your name — please try again.");
+      return;
+    }
+    onProfileUpdated?.();
+  }
+
   function reset() {
     setStatus("idle");
     setError(null);
@@ -36,13 +70,76 @@ export function LoginScreen() {
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center px-6 font-sans">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight" style={{ color: "#1a9c6e" }}>
+          <h1
+            className="text-3xl font-semibold tracking-tight"
+            style={{ color: "#1a9c6e" }}
+          >
             DhanDost
           </h1>
-          <p className="text-sm text-muted-foreground">Your Personal Finance Friend</p>
+          <p className="text-sm text-muted-foreground">
+            Your Personal Finance Friend
+          </p>
         </div>
 
-        {status === "sent" ? (
+        {mode === "name-capture" ? (
+          <form
+            onSubmit={onNameSubmit}
+            className="space-y-4 rounded-lg border border-border bg-card p-6"
+          >
+            <p className="text-sm text-foreground text-center">
+              Welcome back! Please tell us your name to continue.
+            </p>
+            <div className="space-y-2">
+              <label
+                htmlFor="firstName"
+                className="text-sm font-medium text-foreground"
+              >
+                First Name
+              </label>
+              <input
+                id="firstName"
+                type="text"
+                required
+                autoComplete="given-name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First name"
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                disabled={status === "updating"}
+              />
+            </div>
+            <div className="space-y-2">
+              <label
+                htmlFor="lastName"
+                className="text-sm font-medium text-foreground"
+              >
+                Last Name
+              </label>
+              <input
+                id="lastName"
+                type="text"
+                required
+                autoComplete="family-name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last name"
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+                disabled={status === "updating"}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={
+                status === "updating" || !firstName.trim() || !lastName.trim()
+              }
+              className="w-full h-10 rounded-md text-sm font-medium text-white transition-opacity disabled:opacity-70"
+              style={{ backgroundColor: "#1a9c6e" }}
+            >
+              {status === "updating" ? "Saving…" : "Continue"}
+            </button>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </form>
+        ) : status === "sent" ? (
           <div className="space-y-4 rounded-lg border border-border bg-card p-6 text-center">
             <p className="text-sm text-foreground">
               Check your email — we sent a login link to{" "}
@@ -57,9 +154,15 @@ export function LoginScreen() {
             </button>
           </div>
         ) : (
-          <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-border bg-card p-6">
+          <form
+            onSubmit={onSubmit}
+            className="space-y-4 rounded-lg border border-border bg-card p-6"
+          >
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-foreground">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-foreground"
+              >
                 Email
               </label>
               <input
