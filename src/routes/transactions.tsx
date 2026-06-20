@@ -85,9 +85,10 @@ function TransactionsPage() {
           <p className="text-sm text-muted-foreground mt-1">{txs?.length ?? 0} entries</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setOpen(true)}>Add Manual Transaction</Button>
+          <Button data-tour="add-transaction" onClick={() => setOpen(true)}>Add Manual Transaction</Button>
           <Link
             to="/import"
+            data-tour="upload-csv"
             className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-secondary"
           >
             Upload Bank CSV
