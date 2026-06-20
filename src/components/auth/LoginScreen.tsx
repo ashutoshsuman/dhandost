@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import logoAsset from "@/assets/dhandost-logo.png.asset.json";
 
 type LoginScreenMode = "send-link" | "name-capture";
 
