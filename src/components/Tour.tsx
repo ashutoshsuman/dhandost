@@ -35,12 +35,14 @@ const STEPS: StepDef[] = [
   {
     tab: "/transactions",
     target: '[data-tour="add-transaction"]',
+    placement: "bottom",
     content:
       "Start here. Add transactions manually or upload a bank statement CSV. If any transaction is a surprise — an unplanned expense or extra income — click 'Help me with a plan' on that row, and DhanDost will map three ways to absorb it without derailing your goals.",
   },
   {
     tab: "/",
     target: '[data-tour="live-plan-overview"]',
+    placement: "bottom",
     content:
       "Once your data's in, this is your month at a glance. If a category runs over budget, you'll see the same plan-help option appear here too.",
   },
