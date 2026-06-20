@@ -69,7 +69,7 @@ export function LoginScreen({
 
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center px-6 font-sans">
-      <div className="w-full max-w-sm space-y-4">
+      <div className="w-full max-w-sm space-y-3">
         <div className="text-center">
           <img
             src={logoAsset.url}
