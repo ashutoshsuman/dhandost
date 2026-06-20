@@ -1,11 +1,18 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronDown } from "lucide-react";
 import logoAsset from "@/assets/dhandost-logo.png.asset.json";
 const logo = logoAsset.url;
 import { supabase } from "@/lib/supabase";
 import { TrustBadge } from "@/components/TrustBadge";
 import { CoachLauncher } from "@/components/coach/CoachLauncher";
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const nav = [
   { to: "/", label: "Live Plan" },
@@ -16,8 +23,63 @@ const nav = [
   { to: "/debts", label: "Debts" },
   { to: "/chat", label: "Chat" },
   { to: "/data-management", label: "Data" },
-  { to: "/profile", label: "Profile" },
 ];
+
+function UserMenu() {
+  const [firstName, setFirstName] = useState<string>("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadName() {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user || !mounted) return;
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      const fullName = (data?.full_name ?? "").trim();
+      const idx = fullName.indexOf(" ");
+      setFirstName(idx === -1 ? fullName : fullName.slice(0, idx));
+    }
+
+    loadName();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors data-[state=open]:bg-secondary data-[state=open]:text-foreground"
+        >
+          Hi, {firstName || "there"}
+          <ChevronDown className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[140px]">
+        <DropdownMenuItem asChild className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground">
+          <Link to="/profile">Profile</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => supabase.auth.signOut()}
+          className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground"
+        >
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function Layout({ children }: { children?: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -47,37 +109,30 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           <div className="flex items-center gap-3 flex-wrap">
             <TrustBadge />
             <nav className="flex gap-1 text-sm flex-wrap">
-
-            {nav.map((n) => {
-              const active = n.to === "/" ? path === "/" : path.startsWith(n.to);
-              const showBadge = n.to === "/review" && reviewCount > 0;
-              return (
-                <Link
-                  key={n.to}
-                  to={n.to}
-                  className={`relative px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                    active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                  }`}
-                >
-                  {n.label}
-                  {showBadge && (
-                    <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold tabular-nums">
-                      {reviewCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => supabase.auth.signOut()}
-              className="px-3 py-1.5 rounded-lg font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-            >
-              Sign out
-            </button>
-          </nav>
+              {nav.map((n) => {
+                const active = n.to === "/" ? path === "/" : path.startsWith(n.to);
+                const showBadge = n.to === "/review" && reviewCount > 0;
+                return (
+                  <Link
+                    key={n.to}
+                    to={n.to}
+                    className={`relative px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                      active
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    {n.label}
+                    {showBadge && (
+                      <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold tabular-nums">
+                        {reviewCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+              <UserMenu />
+            </nav>
           </div>
         </div>
       </header>
@@ -98,4 +153,3 @@ export function Layout({ children }: { children?: React.ReactNode }) {
     </div>
   );
 }
-
