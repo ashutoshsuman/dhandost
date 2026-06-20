@@ -242,14 +242,33 @@ function PathsPage() {
 
         // If this apply originated from the Variable Spending Tracker's
         // recovery-plan flow, lock the recovery card for the rest of the month.
-        if (consumeRecoveryPlanFlow()) {
+        const isRecoveryPlan = consumeRecoveryPlanFlow();
+        if (isRecoveryPlan) {
           markRecoveryPlanActiveThisMonth();
+        }
+
+        if (typeof pendo !== 'undefined') {
+          pendo.track("path_applied", {
+            path_label: path.label,
+            path_index: index,
+            priority_value: path.priority_value ?? "",
+            trigger_type: data.trigger_type,
+            trigger_amount: data.trigger_amount,
+            path_selection_id: data.path_selection_id ?? "",
+            is_recovery_plan: isRecoveryPlan,
+          });
         }
       } else {
         const { error } = await supabase.from("path_selections").insert({
           path_chosen: label,
         });
         if (error) console.error("path_selections insert failed:", error);
+        if (typeof pendo !== 'undefined') {
+          pendo.track("path_dismissed", {
+            trigger_type: data?.trigger_type ?? "",
+            trigger_amount: data?.trigger_amount ?? 0,
+          });
+        }
       }
       setApplied(true);
       if (path) {

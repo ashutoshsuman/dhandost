@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -92,6 +92,8 @@ type PlanResponse = {
   computed_at: string;
 };
 
+const trackedPlanComputations = new Set<string>();
+
 function LivePlan() {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["compute-plan"],
@@ -144,6 +146,23 @@ function LivePlan() {
       }>;
     },
   });
+
+  useEffect(() => {
+    if (data?.computed_at && !trackedPlanComputations.has(data.computed_at)) {
+      trackedPlanComputations.add(data.computed_at);
+      if (typeof pendo !== 'undefined') {
+        pendo.track("plan_computed", {
+          expected_monthly_income: data.expected_monthly_income,
+          total_fixed_outflows: data.total_fixed_outflows,
+          total_goal_savings_required: data.total_goal_savings_required,
+          discretionary_headroom: data.discretionary_headroom,
+          total_debt_balance: data.total_debt_balance,
+          debt_count: data.debt_count ?? 0,
+          goals_count: data.goals?.length ?? 0,
+        });
+      }
+    }
+  }, [data]);
 
   const { data: activeCommitments } = useQuery({
     queryKey: ["active-commitments"],
@@ -805,6 +824,16 @@ function DebtPaydownCard({
       return data;
     },
     onSuccess: async () => {
+      if (typeof pendo !== 'undefined') {
+        pendo.track("debt_paydown_confirmed", {
+          commitment_id: commitment.id ?? "",
+          debt_name: name,
+          paydown_amount: amount,
+          balance_before: before,
+          balance_after: after,
+          interest_rate_annual: rate ?? 0,
+        });
+      }
       toast("Payment confirmed — debt balance updated.");
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["debts"] }),
@@ -926,6 +955,13 @@ function AllocateSavingsCard({
       return data;
     },
     onSuccess: async () => {
+      if (typeof pendo !== 'undefined') {
+        pendo.track("savings_allocation_confirmed", {
+          commitment_id: commitment.id ?? "",
+          savings_label: label,
+          amount: amount,
+        });
+      }
       toast(`${label} updated — amount set aside.`);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["compute-plan"] }),

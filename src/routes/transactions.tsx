@@ -66,6 +66,14 @@ function TransactionsPage() {
       if (error) throw error;
     },
     onSuccess: () => {
+      if (typeof pendo !== 'undefined' && confirmDelete) {
+        pendo.track("transaction_deleted", {
+          transaction_id: confirmDelete.id,
+          amount: Number(confirmDelete.amount),
+          direction: confirmDelete.direction,
+          category: confirmDelete.category || "",
+        });
+      }
       qc.invalidateQueries({ queryKey: ["transactions"] });
       setConfirmDelete(null);
     },
@@ -177,6 +185,15 @@ function TransactionsPage() {
                 trigger_transaction_id: planFor.id,
               });
               storePathsResponse(resp);
+              if (typeof pendo !== 'undefined') {
+                pendo.track("three_paths_generated", {
+                  trigger_type: kind,
+                  trigger_amount: Number(planFor.amount),
+                  trigger_description: planFor.description || "",
+                  trigger_transaction_id: planFor.id,
+                  paths_count: resp.paths?.length ?? 0,
+                });
+              }
               navigate({ to: "/paths" });
             } catch (e) {
               alert((e as Error).message);
@@ -309,6 +326,16 @@ function AddForm({ onClose, categories }: { onClose: () => void; categories: str
       }
     },
     onSuccess: async () => {
+      const cat = customMode ? form.customCategory.trim() : form.category;
+      if (typeof pendo !== 'undefined') {
+        pendo.track("transaction_added", {
+          direction: form.direction,
+          amount: parseFloat(form.amount),
+          category: cat || "",
+          has_description: !!form.description,
+          source: "manual",
+        });
+      }
       await qc.invalidateQueries({ queryKey: ["transactions"] });
       onClose();
     },

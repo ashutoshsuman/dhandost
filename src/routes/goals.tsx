@@ -48,7 +48,17 @@ function GoalsPage() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
+      const goal = data?.find(g => g.id === variables.id);
+      if (typeof pendo !== 'undefined' && goal) {
+        pendo.track("goal_progress_updated", {
+          goal_id: variables.id,
+          previous_amount: Number(goal.current_amount ?? 0),
+          new_amount: variables.current_amount,
+          target_amount: Number(goal.target_amount),
+          percent_complete: Math.min(100, Math.round((variables.current_amount / Number(goal.target_amount)) * 100)),
+        });
+      }
       await qc.invalidateQueries({ queryKey: ["goals"] });
       await refetch();
     },
@@ -62,6 +72,15 @@ function GoalsPage() {
       await invokeFn("delete-goal", { goal_id: id, confirmed: true });
     },
     onSuccess: () => {
+      if (typeof pendo !== 'undefined' && confirmDelete) {
+        pendo.track("goal_deleted", {
+          goal_id: confirmDelete.id,
+          goal_name: confirmDelete.name,
+          target_amount: Number(confirmDelete.target_amount),
+          current_amount: Number(confirmDelete.current_amount ?? 0),
+          status: confirmDelete.status,
+        });
+      }
       qc.invalidateQueries({ queryKey: ["goals"] });
       setConfirmDelete(null);
     },
@@ -207,7 +226,19 @@ function AddForm({ onClose }: { onClose: () => void }) {
       });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["goals"] }); onClose(); },
+    onSuccess: () => {
+      if (typeof pendo !== 'undefined') {
+        pendo.track("goal_created", {
+          goal_name: form.name,
+          target_amount: parseFloat(form.target_amount),
+          current_amount: parseFloat(form.current_amount || "0"),
+          target_date: form.target_date,
+          priority: parseInt(form.priority),
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["goals"] });
+      onClose();
+    },
   });
 
   return (

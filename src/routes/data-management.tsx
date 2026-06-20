@@ -390,11 +390,21 @@ function CommitmentsSection() {
   const onCancel = async (id: string) => {
     setBusyId(id);
     try {
+      const commitment = data?.find(c => c.id === id);
       const { error } = await supabase
         .from("active_commitments")
         .update({ status: "cancelled" })
         .eq("id", id);
       if (error) throw error;
+      if (typeof pendo !== 'undefined') {
+        pendo.track("commitment_cancelled", {
+          commitment_id: id,
+          commitment_type: commitment?.commitment_type || "",
+          status: commitment?.status || "",
+          monthly_amount: Number(commitment?.monthly_amount ?? 0),
+          paydown_amount: Number(commitment?.paydown_amount ?? 0),
+        });
+      }
       toast.success("Commitment cancelled");
       qc.invalidateQueries({ queryKey: ["dm-commitments"] });
       qc.invalidateQueries({ queryKey: ["active-commitments"] });
@@ -525,6 +535,12 @@ function TransactionsSection() {
         .gte("occurred_at", from)
         .lte("occurred_at", to);
       if (error) throw error;
+      if (typeof pendo !== 'undefined') {
+        pendo.track("transactions_bulk_deleted", {
+          date_from: from,
+          date_to: to,
+        });
+      }
       toast.success("Transactions in range deleted");
       setShowRangeConfirm(false);
       qc.invalidateQueries({ queryKey: ["dm-transactions"] });
@@ -650,6 +666,9 @@ function DangerZone() {
     setErr(null);
     try {
       await invokeFn("reset-user-data", { confirmed: true, confirmation_phrase: "RESET" });
+      if (typeof pendo !== 'undefined') {
+        pendo.track("all_data_reset");
+      }
       try {
         Object.keys(localStorage)
           .filter((k) => k.startsWith("recovery_plan_active_") || k.startsWith("dhandost_"))

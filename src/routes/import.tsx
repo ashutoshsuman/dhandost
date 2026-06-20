@@ -82,14 +82,24 @@ function ImportPage() {
       setHeaders(hs);
       setRows(rs);
       const hasDebitCredit = guessCol(hs, [/debit|withdraw/i]) && guessCol(hs, [/credit|deposit/i]);
+      const detectedMode = hasDebitCredit ? "split" : "single";
       setMapping({
         date: guessCol(hs, [/date|txn.?date|value.?date/i]),
         description: guessCol(hs, [/desc|narration|particulars|details|remarks/i]),
         amount: guessCol(hs, [/^amount$|amt/i]),
         debit: guessCol(hs, [/debit|withdraw/i]),
         credit: guessCol(hs, [/credit|deposit/i]),
-        mode: hasDebitCredit ? "split" : "single",
+        mode: detectedMode,
       });
+      if (typeof pendo !== 'undefined') {
+        pendo.track("bank_statement_parsed", {
+          file_name: file.name,
+          file_type: file.name.split(".").pop() || "",
+          total_rows: rs.length,
+          detected_columns: hs.length,
+          column_mapping_mode: detectedMode,
+        });
+      }
     } catch (e) {
       console.error("Failed to parse file", e);
       alert("Could not parse this file. Try CSV or XLSX.");
@@ -139,6 +149,18 @@ function ImportPage() {
       }
     },
     onSuccess: () => {
+      const validRows = preview.filter((p) => p.valid).length;
+      if (typeof pendo !== 'undefined') {
+        pendo.track("bank_statement_imported", {
+          file_name: fileName,
+          file_type: fileName.split(".").pop() || "",
+          total_rows: preview.length,
+          valid_rows: validRows,
+          skipped_rows: preview.length - validRows,
+          default_category: defaultCategory || "",
+          column_mapping_mode: mapping.mode,
+        });
+      }
       qc.invalidateQueries({ queryKey: ["transactions"] });
       setRows([]); setHeaders([]); setFileName("");
       // fire-and-forget AI categorization of newly imported rows

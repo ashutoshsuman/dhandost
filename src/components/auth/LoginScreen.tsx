@@ -41,6 +41,11 @@ export function LoginScreen({
       return;
     }
     setStatus("sent");
+    if (typeof pendo !== 'undefined') {
+      pendo.track("login_link_sent", {
+        email_domain: email.trim().split("@")[1] || "",
+      });
+    }
   }
 
   async function onNameSubmit(e: FormEvent) {
@@ -57,6 +62,12 @@ export function LoginScreen({
       setStatus("error");
       setError("Couldn't save your name — please try again.");
       return;
+    }
+    if (typeof pendo !== 'undefined') {
+      pendo.track("onboarding_name_submitted", {
+        has_first_name: !!firstName.trim(),
+        has_last_name: !!lastName.trim(),
+      });
     }
     onProfileUpdated?.();
   }

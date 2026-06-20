@@ -43,10 +43,18 @@ export function SelfTransferReview({ currency = "₹" }: { currency?: string }) 
   async function resolve(row: Txn, choice: "yes" | "no") {
     setBusyId(row.id);
     try {
+      const resolution = choice === "yes" ? "genuine_income" : "self_transfer";
       await invokeFn("resolve-self-transfer", {
         transaction_id: row.id,
-        resolution: choice === "yes" ? "genuine_income" : "self_transfer",
+        resolution,
       });
+      if (typeof pendo !== 'undefined') {
+        pendo.track("self_transfer_resolved", {
+          transaction_id: row.id,
+          resolution,
+          amount: Number(row.amount),
+        });
+      }
       setRows((prev) => (prev ?? []).filter((r) => r.id !== row.id));
       queryClient.invalidateQueries({ queryKey: ["review-count"] });
     } catch (err) {

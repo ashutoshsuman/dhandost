@@ -286,6 +286,13 @@ function ForecastCard({
         trigger_description: "Forecasted variable spending overspend",
       });
       storePathsResponse(resp);
+      if (typeof pendo !== 'undefined') {
+        pendo.track("recovery_plan_generated", {
+          forecast_variance: variance,
+          trigger_amount: variance,
+          top_risk_category: topRisk || "",
+        });
+      }
       navigate({ to: "/paths" });
     } catch (e) {
       setError((e as Error).message);

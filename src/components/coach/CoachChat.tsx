@@ -102,6 +102,14 @@ export function CoachChat({
       } else {
         if (response.conversation_id) setConversationId(response.conversation_id);
         const replyText = stripRepeatedPriorOpening(response.reply ?? "", previousMessages);
+        if (typeof pendo !== 'undefined') {
+          pendo.track("coach_message_sent", {
+            message_length: message.length,
+            is_starter_prompt: STARTERS.includes(message),
+            conversation_id: response.conversation_id || conversationId || "",
+            message_count_in_session: previousMessages.filter(m => m.role === "user").length + 1,
+          });
+        }
         setMessages((m) => [
           ...m,
           {

@@ -71,6 +71,15 @@ export default function MoveMoney({ goals = [], onMoved, currency = "₹" }: Pro
       const capNote = data.capped
         ? ` (capped to ${formatINR(moved, currency)} — destination near its target)`
         : "";
+      if (typeof pendo !== 'undefined') {
+        pendo.track("money_moved_between_goals", {
+          from_goal_name: data.from.name,
+          to_goal_name: data.to.name,
+          requested_amount: amt,
+          actually_moved: moved,
+          was_capped: !!data.capped,
+        });
+      }
       setMsg({
         type: "success",
         text: `Moved ${formatINR(moved, currency)} from ${data.from.name} to ${data.to.name}${capNote}.`,

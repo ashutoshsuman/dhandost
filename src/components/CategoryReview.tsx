@@ -87,6 +87,16 @@ export function CategoryEditor({
     setSaved(false);
     try {
       const result = await saveCorrection(transaction.id, next);
+      if (typeof pendo !== 'undefined') {
+        pendo.track("category_corrected", {
+          transaction_id: transaction.id,
+          previous_category: transaction.category || "",
+          new_category: next,
+          was_ai_categorized: transaction.category_source === "ai",
+          was_uncategorized: !transaction.category,
+          is_custom_category: !DEFAULT_CATEGORIES.includes(next),
+        });
+      }
       setValue(next);
       setSaved(true);
       if (!cats.includes(next)) {
@@ -258,6 +268,14 @@ export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
     if (!row.category) return;
     try {
       await saveCorrection(row.id, row.category);
+      if (typeof pendo !== 'undefined') {
+        pendo.track("category_confirmed", {
+          transaction_id: row.id,
+          confirmed_category: row.category,
+          amount: Number(row.amount),
+          direction: row.direction || "",
+        });
+      }
       markConfirmed(row.id);
     } catch (err) {
       alert((err as Error).message);

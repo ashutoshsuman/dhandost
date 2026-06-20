@@ -69,6 +69,12 @@ function ProfilePage() {
     if (error) {
       toast.error(error.message || "Could not save profile");
     } else {
+      if (typeof pendo !== 'undefined') {
+        pendo.track("profile_updated", {
+          has_first_name: !!firstName.trim(),
+          has_last_name: !!lastName.trim(),
+        });
+      }
       toast.success("Profile updated");
     }
   };

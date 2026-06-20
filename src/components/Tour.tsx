@@ -186,6 +186,19 @@ export function TourProvider({ children }: { children: ReactNode }) {
     const { status, type, index, action } = data;
 
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      if (typeof pendo !== 'undefined') {
+        if (status === STATUS.FINISHED) {
+          pendo.track("onboarding_tour_completed", {
+            steps_viewed: index + 1,
+            total_steps: STEPS.length,
+          });
+        } else {
+          pendo.track("onboarding_tour_skipped", {
+            step_index_at_skip: index,
+            total_steps: STEPS.length,
+          });
+        }
+      }
       setRun(false);
       setStepIndex(0);
       setDropdownOpen(false);
@@ -194,6 +207,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
     }
 
     if (action === ACTIONS.SKIP || action === ACTIONS.CLOSE) {
+      if (typeof pendo !== 'undefined') {
+        pendo.track("onboarding_tour_skipped", {
+          step_index_at_skip: index,
+          total_steps: STEPS.length,
+        });
+      }
       setRun(false);
       setStepIndex(0);
       setDropdownOpen(false);

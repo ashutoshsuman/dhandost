@@ -47,7 +47,17 @@ function FixedPage() {
       const { error } = await supabase.from("fixed_expenses").update({ active: !f.active }).eq("id", f.id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fixed_expenses"] }),
+    onSuccess: (_result, f) => {
+      if (typeof pendo !== 'undefined') {
+        pendo.track("fixed_expense_toggled", {
+          expense_id: f.id,
+          expense_name: f.name,
+          amount: Number(f.amount),
+          new_active_state: !f.active,
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
+    },
   });
 
   const del = useMutation({
@@ -56,6 +66,15 @@ function FixedPage() {
       if (error) throw error;
     },
     onSuccess: () => {
+      if (typeof pendo !== 'undefined' && confirmDelete) {
+        pendo.track("fixed_expense_deleted", {
+          expense_id: confirmDelete.id,
+          expense_name: confirmDelete.name,
+          amount: Number(confirmDelete.amount),
+          category: confirmDelete.category || "",
+          was_active: !!confirmDelete.active,
+        });
+      }
       qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
       setConfirmDelete(null);
     },
@@ -154,7 +173,18 @@ function AddForm({ onClose }: { onClose: () => void }) {
       });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["fixed_expenses"] }); onClose(); },
+    onSuccess: () => {
+      if (typeof pendo !== 'undefined') {
+        pendo.track("fixed_expense_added", {
+          expense_name: form.name,
+          amount: parseFloat(form.amount),
+          category: form.category || "",
+          day_of_month: form.day_of_month ? parseInt(form.day_of_month) : null,
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      onClose();
+    },
   });
 
   return (

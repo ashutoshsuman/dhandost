@@ -55,6 +55,14 @@ function DebtsPage() {
       await invokeFn("delete-debt", { debt_id: id, confirmed: true });
     },
     onSuccess: () => {
+      if (typeof pendo !== 'undefined' && confirmDelete) {
+        pendo.track("debt_deleted", {
+          debt_id: confirmDelete.id,
+          debt_name: confirmDelete.name,
+          balance: Number(confirmDelete.balance),
+          interest_rate_annual: Number(confirmDelete.interest_rate_annual),
+        });
+      }
       qc.invalidateQueries({ queryKey: ["debts"] });
       setConfirmDelete(null);
     },
@@ -151,7 +159,17 @@ function AddForm({ onClose }: { onClose: () => void }) {
       });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["debts"] }); onClose(); },
+    onSuccess: () => {
+      if (typeof pendo !== 'undefined') {
+        pendo.track("debt_added", {
+          debt_name: form.name,
+          balance: parseFloat(form.balance),
+          interest_rate_annual: parseFloat(form.interest_rate_annual),
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["debts"] });
+      onClose();
+    },
   });
 
   return (
