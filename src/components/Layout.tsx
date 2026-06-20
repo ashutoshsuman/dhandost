@@ -60,6 +60,7 @@ function UserMenu() {
 
   return (
     <DropdownMenu
+      modal={false}
       open={open}
       onOpenChange={(o) => {
         setLocalOpen(o);
@@ -76,7 +77,19 @@ function UserMenu() {
           <ChevronDown className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[160px]">
+      <DropdownMenuContent
+        align="end"
+        className="min-w-[160px]"
+        onInteractOutside={(e) => {
+          if (tour.dropdownOpen) e.preventDefault();
+        }}
+        onFocusOutside={(e) => {
+          if (tour.dropdownOpen) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (tour.dropdownOpen) e.preventDefault();
+        }}
+      >
         <DropdownMenuItem
           onSelect={(e) => {
             e.preventDefault();
