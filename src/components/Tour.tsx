@@ -163,18 +163,17 @@ export function TourProvider({ children }: { children: ReactNode }) {
       }
       const needsDropdown = nextIndex === 8 || nextIndex === 9;
       if (needsDropdown) {
-        // Open dropdown first, then wait for the menu item to actually be
-        // in the DOM (Radix portal + animation) before advancing Joyride —
-        // otherwise Joyride measures against a missing target and flashes
-        // at the page's top-left.
         setDropdownOpen(true);
-        await waitForTarget(next.target, 1500);
-        await waitFrame();
-      } else {
-        if (dropdownOpen) setDropdownOpen(false);
-        await waitFrame();
-        await waitFrame();
+      } else if (dropdownOpen) {
+        setDropdownOpen(false);
       }
+      if (next.target !== "body") {
+        const found = await waitForTarget(next.target, 3000);
+        if (!found) {
+          console.warn(`Tour: target "${next.target}" not found after 3s`);
+        }
+      }
+      await waitFrame();
       setStepIndex(nextIndex);
     },
     [navigate, dropdownOpen],
