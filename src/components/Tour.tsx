@@ -226,11 +226,14 @@ export function TourProvider({ children }: { children: ReactNode }) {
     <TourContext.Provider value={{ start, dropdownOpen, setDropdownOpen }}>
       {children}
       <Joyride
+        key={`tour-step-${stepIndex}`}
         steps={joyrideSteps}
         run={run}
         stepIndex={stepIndex}
         continuous
-        scrollToFirstStep
+        scrollToFirstStep={false}
+        spotlightClicks={false}
+        disableScrolling
         onEvent={handleEvent}
         options={{
           primaryColor: "oklch(0.58 0.12 162)",
