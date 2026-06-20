@@ -60,7 +60,7 @@ function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors data-[state=open]:bg-secondary data-[state=open]:text-foreground"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer transition-colors data-[state=open]:bg-secondary data-[state=open]:text-foreground"
         >
           Hi, {firstName || "there"}
           <ChevronDown className="h-4 w-4" />
