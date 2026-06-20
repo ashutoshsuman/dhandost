@@ -155,6 +155,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                   <Link
                     key={n.to}
                     to={n.to}
+                    data-tour={n.tour}
                     className={`relative px-3 py-1.5 rounded-lg font-medium transition-colors ${
                       active
                         ? "bg-primary/10 text-primary"
