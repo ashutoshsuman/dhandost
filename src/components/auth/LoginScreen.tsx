@@ -177,7 +177,7 @@ export function LoginScreen({
             <button
               type="submit"
               disabled={status === "sending"}
-              className="w-full h-10 rounded-md text-sm font-medium text-white transition-opacity disabled:opacity-70"
+              className="w-full h-10 rounded-md text-sm font-medium text-white transition-opacity disabled:opacity-70 cursor-pointer"
               style={{ backgroundColor: "#1a9c6e" }}
             >
               {status === "sending" ? "Sending…" : "Send login link"}
