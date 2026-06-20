@@ -1,6 +1,7 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import logo from "@/assets/dhandost-logo.png";
+import logoAsset from "@/assets/dhandost-logo.png.asset.json";
+const logo = logoAsset.url;
 import { supabase } from "@/lib/supabase";
 import { TrustBadge } from "@/components/TrustBadge";
 import { CoachLauncher } from "@/components/coach/CoachLauncher";
