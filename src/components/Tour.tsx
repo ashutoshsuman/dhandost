@@ -160,10 +160,18 @@ export function TourProvider({ children }: { children: ReactNode }) {
     [navigate],
   );
 
-  const handleCallback = (data: CallBackProps) => {
+  const handleEvent = (data: EventData) => {
     const { status, type, index, action } = data;
 
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      setRun(false);
+      setStepIndex(0);
+      setDropdownOpen(false);
+      void markComplete();
+      return;
+    }
+
+    if (action === ACTIONS.SKIP || action === ACTIONS.CLOSE) {
       setRun(false);
       setStepIndex(0);
       setDropdownOpen(false);
@@ -189,7 +197,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     target: s.target,
     content: s.content,
     placement: s.placement ?? "auto",
-    disableBeacon: true,
+    skipBeacon: true,
   }));
 
   return (
@@ -200,11 +208,19 @@ export function TourProvider({ children }: { children: ReactNode }) {
         run={run}
         stepIndex={stepIndex}
         continuous
-        showSkipButton
-        showProgress
         scrollToFirstStep
-        disableOverlayClose
-        callback={handleCallback}
+        onEvent={handleEvent}
+        options={{
+          primaryColor: "oklch(0.58 0.12 162)",
+          textColor: "oklch(0.18 0.03 240)",
+          backgroundColor: "#ffffff",
+          arrowColor: "#ffffff",
+          overlayColor: "rgba(15, 23, 42, 0.55)",
+          zIndex: 10000,
+          showProgress: true,
+          buttons: ["back", "skip", "primary"],
+          overlayClickAction: false,
+        }}
         locale={{
           back: "Back",
           close: "Close",
@@ -213,14 +229,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
           skip: "Skip tour",
         }}
         styles={{
-          options: {
-            primaryColor: "oklch(0.58 0.12 162)",
-            textColor: "oklch(0.18 0.03 240)",
-            backgroundColor: "#ffffff",
-            arrowColor: "#ffffff",
-            overlayColor: "rgba(15, 23, 42, 0.55)",
-            zIndex: 10000,
-          },
           tooltip: {
             borderRadius: 14,
             padding: 18,
@@ -232,12 +240,13 @@ export function TourProvider({ children }: { children: ReactNode }) {
             padding: "8px 0 4px",
             lineHeight: 1.5,
           },
-          buttonNext: {
+          buttonPrimary: {
             backgroundColor: "oklch(0.58 0.12 162)",
             borderRadius: 8,
             padding: "8px 14px",
             fontSize: 13,
             fontWeight: 600,
+            color: "#ffffff",
           },
           buttonBack: {
             color: "oklch(0.45 0.02 240)",
@@ -258,3 +267,4 @@ export function TourProvider({ children }: { children: ReactNode }) {
     </TourContext.Provider>
   );
 }
+
