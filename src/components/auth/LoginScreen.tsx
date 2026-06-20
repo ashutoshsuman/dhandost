@@ -71,15 +71,11 @@ export function LoginScreen({
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center px-6 font-sans">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-2">
-          <h1
-            className="text-3xl font-semibold tracking-tight"
-            style={{ color: "#1a9c6e" }}
-          >
-            DhanDost
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Your Personal Finance Friend
-          </p>
+          <img
+            src={logoAsset.url}
+            alt="DhanDost logo"
+            className="mx-auto h-auto max-w-[220px]"
+          />
         </div>
 
         {mode === "name-capture" ? (
