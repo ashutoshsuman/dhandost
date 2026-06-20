@@ -88,11 +88,17 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   const { data: reviewCount = 0 } = useQuery({
     queryKey: ["review-count"],
     queryFn: async () => {
-      const { count } = await supabase
-        .from("transactions")
-        .select("id", { count: "exact", head: true })
-        .or("category_source.eq.ai,needs_ai_categorization.eq.true");
-      return count ?? 0;
+      const [{ count: catCount }, { count: stCount }] = await Promise.all([
+        supabase
+          .from("transactions")
+          .select("id", { count: "exact", head: true })
+          .or("category_source.eq.ai,needs_ai_categorization.eq.true"),
+        supabase
+          .from("transactions")
+          .select("id", { count: "exact", head: true })
+          .eq("self_transfer_confidence", "name_match"),
+      ]);
+      return (catCount ?? 0) + (stCount ?? 0);
     },
     refetchInterval: 60000,
   });
