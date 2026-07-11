@@ -222,7 +222,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
       const nextIndex = index + (action === ACTIONS.PREV ? -1 : 1);
       if (nextIndex < 0) return;
-      if (nextIndex >= STEPS.length) {
+      if (nextIndex >= steps.length) {
         setRun(false);
         setStepIndex(0);
         setDropdownOpen(false);
