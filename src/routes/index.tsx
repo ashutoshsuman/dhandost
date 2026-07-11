@@ -8,6 +8,7 @@ import {
   RefreshCw,
   ChevronDown,
   CheckCircle2,
+  Circle,
   PartyPopper,
   Lightbulb,
   ArrowRight,
@@ -16,6 +17,7 @@ import {
   TrendingUp,
   Banknote,
 } from "lucide-react";
+
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
