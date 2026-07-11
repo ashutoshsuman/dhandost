@@ -202,7 +202,39 @@ function LivePlan() {
     },
   });
 
-  if (isLoading) {
+  const { data: setupCounts, isLoading: setupLoading } = useQuery({
+    queryKey: ["setup-counts"],
+    queryFn: async () => {
+      const [tx, goals, fixed, profile] = await Promise.all([
+        supabase.from("transactions").select("id", { count: "exact", head: true }),
+        supabase.from("goals").select("id", { count: "exact", head: true }),
+        supabase.from("fixed_expenses").select("id", { count: "exact", head: true }),
+        (async () => {
+          const { data: u } = await supabase.auth.getUser();
+          if (!u.user) return null;
+          const { data } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("user_id", u.user.id)
+            .maybeSingle();
+          return data?.full_name as string | null | undefined;
+        })(),
+      ]);
+      return {
+        transactions: tx.count ?? 0,
+        goals: goals.count ?? 0,
+        fixed: fixed.count ?? 0,
+        fullName: profile ?? null,
+      };
+    },
+  });
+
+  if (setupCounts && setupCounts.transactions === 0) {
+    return <WelcomeSetup counts={setupCounts} />;
+  }
+
+  if (isLoading || setupLoading) {
+
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
