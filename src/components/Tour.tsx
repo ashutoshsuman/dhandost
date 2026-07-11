@@ -121,7 +121,25 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const autoStartChecked = useRef(false);
 
-  const start = useCallback(() => {
+  const [steps, setSteps] = useState<StepDef[]>(STEPS);
+
+  const start = useCallback(async () => {
+    const { count } = await supabase
+      .from("transactions")
+      .select("*", { head: true, count: "exact" });
+    const hasTx = (count ?? 0) > 0;
+    setSteps(
+      STEPS.map((s, i) =>
+        i === 2
+          ? {
+              ...s,
+              content: hasTx
+                ? "Once your data's in, this is your month at a glance. If a category runs over budget, you'll see the same plan-help option appear here too."
+                : "This is your setup guide. Work through these three steps — starting with your transactions — and this page will turn into your live monthly plan.",
+            }
+          : s,
+      ),
+    );
     setStepIndex(0);
     setDropdownOpen(false);
     setRun(true);
