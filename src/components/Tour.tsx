@@ -174,7 +174,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const goToStep = useCallback(
     async (nextIndex: number) => {
-      const next = STEPS[nextIndex];
+      const next = steps[nextIndex];
       if (!next) return;
       if (next.tab && window.location.pathname !== next.tab) {
         await navigate({ to: next.tab });
