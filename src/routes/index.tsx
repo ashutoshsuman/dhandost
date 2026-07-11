@@ -522,7 +522,7 @@ function LivePlan() {
       })()}
 
       {/* Breakdown */}
-      <section className="rounded-xl border border-border bg-card divide-y divide-border">
+      <section data-tour="live-plan-overview" className="rounded-xl border border-border bg-card divide-y divide-border">
         <BreakdownRow
           label="Expected monthly income"
           amount={data.expected_monthly_income}
