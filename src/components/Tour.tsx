@@ -233,7 +233,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const joyrideSteps: Step[] = STEPS.map((s) => ({
+  const joyrideSteps: Step[] = steps.map((s) => ({
     target: s.target,
     content: s.content,
     placement: s.placement ?? "auto",
