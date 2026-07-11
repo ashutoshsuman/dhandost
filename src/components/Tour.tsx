@@ -196,7 +196,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       await waitFrame();
       setStepIndex(nextIndex);
     },
-    [navigate, dropdownOpen],
+    [navigate, dropdownOpen, steps],
   );
 
 
