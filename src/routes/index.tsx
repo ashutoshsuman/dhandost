@@ -8,6 +8,7 @@ import {
   RefreshCw,
   ChevronDown,
   CheckCircle2,
+  Circle,
   PartyPopper,
   Lightbulb,
   ArrowRight,
@@ -16,6 +17,7 @@ import {
   TrendingUp,
   Banknote,
 } from "lucide-react";
+
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
@@ -200,7 +202,39 @@ function LivePlan() {
     },
   });
 
-  if (isLoading) {
+  const { data: setupCounts, isLoading: setupLoading } = useQuery({
+    queryKey: ["setup-counts"],
+    queryFn: async () => {
+      const [tx, goals, fixed, profile] = await Promise.all([
+        supabase.from("transactions").select("id", { count: "exact", head: true }),
+        supabase.from("goals").select("id", { count: "exact", head: true }),
+        supabase.from("fixed_expenses").select("id", { count: "exact", head: true }),
+        (async () => {
+          const { data: u } = await supabase.auth.getUser();
+          if (!u.user) return null;
+          const { data } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("user_id", u.user.id)
+            .maybeSingle();
+          return data?.full_name as string | null | undefined;
+        })(),
+      ]);
+      return {
+        transactions: tx.count ?? 0,
+        goals: goals.count ?? 0,
+        fixed: fixed.count ?? 0,
+        fullName: profile ?? null,
+      };
+    },
+  });
+
+  if (setupCounts && setupCounts.transactions === 0) {
+    return <WelcomeSetup counts={setupCounts} />;
+  }
+
+  if (isLoading || setupLoading) {
+
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -999,3 +1033,71 @@ function AllocateSavingsCard({
     </div>
   );
 }
+
+function WelcomeSetup({
+  counts,
+}: {
+  counts: { transactions: number; goals: number; fixed: number; fullName: string | null };
+}) {
+  const firstName = counts.fullName?.trim().split(/\s+/)[0] ?? "";
+  const items = [
+    { label: "Add your transactions", done: counts.transactions > 0, to: "/transactions" },
+    { label: "Set a savings goal", done: counts.goals > 0, to: "/goals" },
+    { label: "Add your fixed expenses", done: counts.fixed > 0, to: "/fixed" },
+  ] as const;
+
+  return (
+    <div className="max-w-2xl mx-auto pb-8">
+      <section
+        data-tour="live-plan-overview"
+        className="rounded-xl border border-border bg-card p-6 md:p-8 space-y-6"
+      >
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {firstName ? `Welcome, ${firstName}!` : "Welcome!"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Let&apos;s set up your finances in under 2 minutes.
+          </p>
+        </div>
+
+        <ul className="space-y-2">
+          {items.map((it) => (
+            <li
+              key={it.label}
+              className="flex items-center gap-3 rounded-lg border border-border bg-background/50 px-4 py-3"
+            >
+              {it.done ? (
+                <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
+              ) : (
+                <Circle className="h-5 w-5 text-muted-foreground/50 shrink-0" />
+              )}
+              <span
+                className={`flex-1 text-sm ${it.done ? "text-muted-foreground line-through" : "text-foreground"}`}
+              >
+                {it.label}
+              </span>
+              {!it.done && (
+                <Link
+                  to={it.to}
+                  className="text-xs font-medium text-primary hover:underline cursor-pointer"
+                >
+                  Start here
+                </Link>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        <Link
+          to="/transactions"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer"
+        >
+          Add your first transactions
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </section>
+    </div>
+  );
+}
+
