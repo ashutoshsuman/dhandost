@@ -245,7 +245,7 @@ function AddForm({ onClose }: { onClose: () => void }) {
         <Field label="Target date"><Input type="date" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })} required /></Field>
         <Field label="Priority"><Input type="number" min="1" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} /></Field>
       </div>
-      {add.isError && <p className="text-sm text-destructive">{(add.error as Error).message}</p>}
+      {add.isError && <p className="text-sm text-destructive">Couldn't save — please try again. ({(add.error as Error).message})</p>}
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
         <Button type="submit" disabled={add.isPending}>{add.isPending ? "Saving…" : "Save"}</Button>
