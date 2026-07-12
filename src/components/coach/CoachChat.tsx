@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/lib/supabase";
+import { withTimeout, TIMEOUT_AI, TimeoutError } from "@/lib/withTimeout";
 import { useCoach, type CoachMessage } from "./CoachContext";
 
 
