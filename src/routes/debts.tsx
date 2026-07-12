@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
+import { withTimeout, TIMEOUT_FAST } from "@/lib/withTimeout";
 import { formatINR } from "@/lib/format";
 import { Button, Field, Input } from "@/components/ui-primitives";
 import {
@@ -38,16 +39,21 @@ function DebtsPage() {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Debt | null>(null);
 
-  const { data } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["debts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("debts")
-        .select("*")
-        .order("interest_rate_annual", { ascending: false });
+      const { data, error } = await withTimeout(
+        supabase
+          .from("debts")
+          .select("*")
+          .order("interest_rate_annual", { ascending: false }),
+        TIMEOUT_FAST,
+        "load debts",
+      );
       if (error) throw error;
       return (data ?? []).filter((d: Debt) => d.active !== false) as Debt[];
     },
+    retry: 1,
   });
 
   const del = useMutation({
@@ -76,6 +82,19 @@ function DebtsPage() {
       </div>
 
       {open && <AddForm onClose={() => setOpen(false)} />}
+
+      {error && (
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 cursor-pointer text-left"
+        >
+          Couldn't load debts — tap to retry.
+        </button>
+      )}
+      {isLoading && !data && (
+        <p className="text-sm text-muted-foreground">Loading debts…</p>
+      )}
 
       <div className="rounded-lg border border-border bg-card overflow-hidden">
         <table className="w-full text-sm">
@@ -143,12 +162,16 @@ function AddForm({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({ name: "", balance: "", interest_rate_annual: "" });
   const add = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("debts").insert({
-        name: form.name,
-        balance: parseFloat(form.balance),
-        interest_rate_annual: parseFloat(form.interest_rate_annual),
-        active: true,
-      });
+      const { error } = await withTimeout(
+        supabase.from("debts").insert({
+          name: form.name,
+          balance: parseFloat(form.balance),
+          interest_rate_annual: parseFloat(form.interest_rate_annual),
+          active: true,
+        }),
+        TIMEOUT_FAST,
+        "save debt",
+      );
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["debts"] }); onClose(); },
@@ -164,7 +187,7 @@ function AddForm({ onClose }: { onClose: () => void }) {
         <Field label="Current balance (₹)"><Input type="number" step="0.01" min="0" value={form.balance} onChange={(e) => setForm({ ...form, balance: e.target.value })} required /></Field>
         <Field label="Interest rate (% p.a.)"><Input type="number" step="0.01" min="0" value={form.interest_rate_annual} onChange={(e) => setForm({ ...form, interest_rate_annual: e.target.value })} required /></Field>
       </div>
-      {add.isError && <p className="text-sm text-destructive">{(add.error as Error).message}</p>}
+      {add.isError && <p className="text-sm text-destructive">Couldn't save — please try again. ({(add.error as Error).message})</p>}
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
         <Button type="submit" disabled={add.isPending}>{add.isPending ? "Saving…" : "Save"}</Button>

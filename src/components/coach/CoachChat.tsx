@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/lib/supabase";
+import { withTimeout, TIMEOUT_AI, TimeoutError } from "@/lib/withTimeout";
 import { useCoach, type CoachMessage } from "./CoachContext";
 
 
@@ -77,16 +78,20 @@ export function CoachChat({
     setMessages((m) => [...m, { role: "user", content: message }]);
     setPending(true);
     try {
-      const { data: response, error } = await supabase.functions.invoke<{
-        error?: unknown;
-        conversation_id?: string;
-        reply?: string;
-      }>("financial-chat", {
-        body: {
-          conversation_id: conversationId,
-          message,
-        },
-      });
+      const { data: response, error } = await withTimeout(
+        supabase.functions.invoke<{
+          error?: unknown;
+          conversation_id?: string;
+          reply?: string;
+        }>("financial-chat", {
+          body: {
+            conversation_id: conversationId,
+            message,
+          },
+        }),
+        TIMEOUT_AI,
+        "chat reply",
+      );
 
       if (error) {
         console.error("financial-chat failed", error);
@@ -112,9 +117,15 @@ export function CoachChat({
       }
     } catch (e) {
       console.error("financial-chat failed", e);
+      const isTimeout = e instanceof TimeoutError;
       setMessages((m) => [
         ...m,
-        { role: "assistant", content: "Something went wrong — please try again." },
+        {
+          role: "assistant",
+          content: isTimeout
+            ? "That took longer than expected — please try again."
+            : "Something went wrong — please try again.",
+        },
       ]);
     } finally {
       setPending(false);

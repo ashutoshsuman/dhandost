@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { supabase, type FixedExpense } from "@/lib/supabase";
+import { withTimeout, TIMEOUT_FAST } from "@/lib/withTimeout";
 import { formatINR } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
@@ -30,34 +31,55 @@ function FixedPage() {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<FixedExpense | null>(null);
 
-  const { data } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["fixed_expenses"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fixed_expenses")
-        .select("*")
-        .order("day_of_month", { ascending: true, nullsFirst: false });
+      const { data, error } = await withTimeout(
+        supabase
+          .from("fixed_expenses")
+          .select("*")
+          .order("day_of_month", { ascending: true, nullsFirst: false }),
+        TIMEOUT_FAST,
+        "load fixed expenses",
+      );
       if (error) throw error;
       return data as FixedExpense[];
     },
+    retry: 1,
   });
 
   const toggle = useMutation({
     mutationFn: async (f: FixedExpense) => {
-      const { error } = await supabase.from("fixed_expenses").update({ active: !f.active }).eq("id", f.id);
+      const { error } = await withTimeout(
+        supabase.from("fixed_expenses").update({ active: !f.active }).eq("id", f.id),
+        TIMEOUT_FAST,
+        "toggle fixed expense",
+      );
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fixed_expenses"] }),
+    onError: (err) => {
+      console.error("toggle fixed expense failed", err);
+      alert("Couldn't update — please try again.");
+    },
   });
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("fixed_expenses").delete().eq("id", id);
+      const { error } = await withTimeout(
+        supabase.from("fixed_expenses").delete().eq("id", id),
+        TIMEOUT_FAST,
+        "delete fixed expense",
+      );
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
       setConfirmDelete(null);
+    },
+    onError: (err) => {
+      console.error("delete fixed expense failed", err);
+      alert("Couldn't delete — please try again.");
     },
   });
 
@@ -74,6 +96,19 @@ function FixedPage() {
       </div>
 
       {open && <AddForm onClose={() => setOpen(false)} />}
+
+      {error && (
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 cursor-pointer text-left"
+        >
+          Couldn't load fixed expenses — tap to retry.
+        </button>
+      )}
+      {isLoading && !data && (
+        <p className="text-sm text-muted-foreground">Loading fixed expenses…</p>
+      )}
 
       <div className="rounded-lg border border-border bg-card overflow-hidden">
         <table className="w-full text-sm">
@@ -145,13 +180,17 @@ function AddForm({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({ name: "", amount: "", category: "", day_of_month: "" });
   const add = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("fixed_expenses").insert({
-        name: form.name,
-        amount: parseFloat(form.amount),
-        category: form.category || null,
-        day_of_month: form.day_of_month ? parseInt(form.day_of_month) : null,
-        active: true,
-      });
+      const { error } = await withTimeout(
+        supabase.from("fixed_expenses").insert({
+          name: form.name,
+          amount: parseFloat(form.amount),
+          category: form.category || null,
+          day_of_month: form.day_of_month ? parseInt(form.day_of_month) : null,
+          active: true,
+        }),
+        TIMEOUT_FAST,
+        "save fixed expense",
+      );
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["fixed_expenses"] }); onClose(); },
@@ -173,7 +212,7 @@ function AddForm({ onClose }: { onClose: () => void }) {
         </Field>
         <Field label="Day of month"><Input type="number" min="1" max="31" value={form.day_of_month} onChange={(e) => setForm({ ...form, day_of_month: e.target.value })} /></Field>
       </div>
-      {add.isError && <p className="text-sm text-destructive">{(add.error as Error).message}</p>}
+      {add.isError && <p className="text-sm text-destructive">Couldn't save — please try again. ({(add.error as Error).message})</p>}
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
         <Button type="submit" disabled={add.isPending}>{add.isPending ? "Saving…" : "Save"}</Button>

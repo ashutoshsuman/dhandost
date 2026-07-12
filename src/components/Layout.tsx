@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import logoAsset from "@/assets/dhandost-logo.png.asset.json";
 const logo = logoAsset.url;
 import { supabase } from "@/lib/supabase";
+import { withTimeout, TIMEOUT_SIGNOUT } from "@/lib/withTimeout";
 import { TrustBadge } from "@/components/TrustBadge";
 import { CoachLauncher } from "@/components/coach/CoachLauncher";
 import { useTour } from "@/components/Tour";
@@ -116,7 +117,24 @@ function UserMenu() {
           <Link to="/data-management">Data</Link>
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => { pendo.clearSession(); supabase.auth.signOut(); }}
+          onSelect={async () => {
+            try { pendo.clearSession(); } catch { /* ignore */ }
+            try {
+              await withTimeout(supabase.auth.signOut(), TIMEOUT_SIGNOUT, "sign out");
+            } catch (err) {
+              console.error("sign-out failed, clearing local session anyway", err);
+            } finally {
+              // Ensure local session is cleared even if the network call failed
+              // or timed out — the user must never be trapped on a stuck screen.
+              try {
+                Object.keys(localStorage)
+                  .filter((k) => k.startsWith("sb-") && k.endsWith("-auth-token"))
+                  .forEach((k) => localStorage.removeItem(k));
+              } catch { /* ignore */ }
+              // Force AuthGate to re-evaluate.
+              window.location.assign("/");
+            }
+          }}
           className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground focus:text-foreground"
         >
           Sign out

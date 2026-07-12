@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { supabase, type Goal } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
+import { withTimeout, TIMEOUT_FAST } from "@/lib/withTimeout";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input } from "@/components/ui-primitives";
 import {
@@ -31,13 +32,18 @@ function GoalsPage() {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Goal | null>(null);
 
-  const { data, refetch } = useQuery({
+  const { data, refetch, isLoading, error } = useQuery({
     queryKey: ["goals"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("goals").select("*").order("priority", { ascending: true });
+      const { data, error } = await withTimeout(
+        supabase.from("goals").select("*").order("priority", { ascending: true }),
+        TIMEOUT_FAST,
+        "load goals",
+      );
       if (error) throw error;
       return data as Goal[];
     },
+    retry: 1,
   });
 
   const update = useMutation({
@@ -85,6 +91,19 @@ function GoalsPage() {
       </div>
 
       {open && <AddForm onClose={() => setOpen(false)} />}
+
+      {error && (
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 cursor-pointer text-left"
+        >
+          Couldn't load your goals — tap to retry.
+        </button>
+      )}
+      {isLoading && !data && (
+        <p className="text-sm text-muted-foreground">Loading goals…</p>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {(data ?? []).map((g) => {
@@ -197,14 +216,18 @@ function AddForm({ onClose }: { onClose: () => void }) {
   });
   const add = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("goals").insert({
-        name: form.name,
-        target_amount: parseFloat(form.target_amount),
-        current_amount: parseFloat(form.current_amount || "0"),
-        target_date: form.target_date,
-        priority: parseInt(form.priority),
-        status: "active",
-      });
+      const { error } = await withTimeout(
+        supabase.from("goals").insert({
+          name: form.name,
+          target_amount: parseFloat(form.target_amount),
+          current_amount: parseFloat(form.current_amount || "0"),
+          target_date: form.target_date,
+          priority: parseInt(form.priority),
+          status: "active",
+        }),
+        TIMEOUT_FAST,
+        "save goal",
+      );
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["goals"] }); onClose(); },
@@ -222,7 +245,7 @@ function AddForm({ onClose }: { onClose: () => void }) {
         <Field label="Target date"><Input type="date" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })} required /></Field>
         <Field label="Priority"><Input type="number" min="1" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} /></Field>
       </div>
-      {add.isError && <p className="text-sm text-destructive">{(add.error as Error).message}</p>}
+      {add.isError && <p className="text-sm text-destructive">Couldn't save — please try again. ({(add.error as Error).message})</p>}
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
         <Button type="submit" disabled={add.isPending}>{add.isPending ? "Saving…" : "Save"}</Button>
