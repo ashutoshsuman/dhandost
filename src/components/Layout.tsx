@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import logoAsset from "@/assets/dhandost-logo.png.asset.json";
 const logo = logoAsset.url;
 import { supabase } from "@/lib/supabase";
+import { withTimeout, TIMEOUT_SIGNOUT } from "@/lib/withTimeout";
 import { TrustBadge } from "@/components/TrustBadge";
 import { CoachLauncher } from "@/components/coach/CoachLauncher";
 import { useTour } from "@/components/Tour";
