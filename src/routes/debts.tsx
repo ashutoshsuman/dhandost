@@ -187,7 +187,7 @@ function AddForm({ onClose }: { onClose: () => void }) {
         <Field label="Current balance (₹)"><Input type="number" step="0.01" min="0" value={form.balance} onChange={(e) => setForm({ ...form, balance: e.target.value })} required /></Field>
         <Field label="Interest rate (% p.a.)"><Input type="number" step="0.01" min="0" value={form.interest_rate_annual} onChange={(e) => setForm({ ...form, interest_rate_annual: e.target.value })} required /></Field>
       </div>
-      {add.isError && <p className="text-sm text-destructive">{(add.error as Error).message}</p>}
+      {add.isError && <p className="text-sm text-destructive">Couldn't save — please try again. ({(add.error as Error).message})</p>}
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
         <Button type="submit" disabled={add.isPending}>{add.isPending ? "Saving…" : "Save"}</Button>
