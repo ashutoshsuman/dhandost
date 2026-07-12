@@ -78,16 +78,20 @@ export function CoachChat({
     setMessages((m) => [...m, { role: "user", content: message }]);
     setPending(true);
     try {
-      const { data: response, error } = await supabase.functions.invoke<{
-        error?: unknown;
-        conversation_id?: string;
-        reply?: string;
-      }>("financial-chat", {
-        body: {
-          conversation_id: conversationId,
-          message,
-        },
-      });
+      const { data: response, error } = await withTimeout(
+        supabase.functions.invoke<{
+          error?: unknown;
+          conversation_id?: string;
+          reply?: string;
+        }>("financial-chat", {
+          body: {
+            conversation_id: conversationId,
+            message,
+          },
+        }),
+        TIMEOUT_AI,
+        "chat reply",
+      );
 
       if (error) {
         console.error("financial-chat failed", error);
