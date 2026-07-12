@@ -92,6 +92,19 @@ function GoalsPage() {
 
       {open && <AddForm onClose={() => setOpen(false)} />}
 
+      {error && (
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 cursor-pointer text-left"
+        >
+          Couldn't load your goals — tap to retry.
+        </button>
+      )}
+      {isLoading && !data && (
+        <p className="text-sm text-muted-foreground">Loading goals…</p>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {(data ?? []).map((g) => {
           const cur = Number(g.current_amount ?? 0);
