@@ -236,7 +236,14 @@ function PlanModal({
         {computing ? (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Relax while computing your options…</p>
+            <CyclingStatus
+              messages={[
+                "Relax while we map your options…",
+                "Weighing a safer approach…",
+                "Balancing against your goals…",
+                "Shaping three honest paths…",
+              ]}
+            />
           </div>
         ) : (
           <>
