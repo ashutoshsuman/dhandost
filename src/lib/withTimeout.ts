@@ -16,7 +16,7 @@ export class TimeoutError extends Error {
 }
 
 export function withTimeout<T>(
-  promise: Promise<T>,
+  promise: PromiseLike<T>,
   ms: number,
   label?: string,
 ): Promise<T> {
