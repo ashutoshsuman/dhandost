@@ -21,6 +21,7 @@ import {
 import { Layout } from "@/components/Layout";
 import { formatINR, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
+import { withTimeout, TIMEOUT_AI, TIMEOUT_FAST } from "@/lib/withTimeout";
 import SpendSummary from "@/components/SpendSummary";
 import VariableSpendingTracker from "@/components/VariableSpendingTracker";
 import SpendingInsights from "@/components/SpendingInsights";
