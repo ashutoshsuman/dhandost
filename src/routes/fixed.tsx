@@ -180,13 +180,17 @@ function AddForm({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({ name: "", amount: "", category: "", day_of_month: "" });
   const add = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("fixed_expenses").insert({
-        name: form.name,
-        amount: parseFloat(form.amount),
-        category: form.category || null,
-        day_of_month: form.day_of_month ? parseInt(form.day_of_month) : null,
-        active: true,
-      });
+      const { error } = await withTimeout(
+        supabase.from("fixed_expenses").insert({
+          name: form.name,
+          amount: parseFloat(form.amount),
+          category: form.category || null,
+          day_of_month: form.day_of_month ? parseInt(form.day_of_month) : null,
+          active: true,
+        }),
+        TIMEOUT_FAST,
+        "save fixed expense",
+      );
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["fixed_expenses"] }); onClose(); },
