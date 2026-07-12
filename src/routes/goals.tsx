@@ -216,14 +216,18 @@ function AddForm({ onClose }: { onClose: () => void }) {
   });
   const add = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("goals").insert({
-        name: form.name,
-        target_amount: parseFloat(form.target_amount),
-        current_amount: parseFloat(form.current_amount || "0"),
-        target_date: form.target_date,
-        priority: parseInt(form.priority),
-        status: "active",
-      });
+      const { error } = await withTimeout(
+        supabase.from("goals").insert({
+          name: form.name,
+          target_amount: parseFloat(form.target_amount),
+          current_amount: parseFloat(form.current_amount || "0"),
+          target_date: form.target_date,
+          priority: parseInt(form.priority),
+          status: "active",
+        }),
+        TIMEOUT_FAST,
+        "save goal",
+      );
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["goals"] }); onClose(); },
