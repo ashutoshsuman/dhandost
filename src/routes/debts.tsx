@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
+import { withTimeout, TIMEOUT_FAST } from "@/lib/withTimeout";
 import { formatINR } from "@/lib/format";
 import { Button, Field, Input } from "@/components/ui-primitives";
 import {
