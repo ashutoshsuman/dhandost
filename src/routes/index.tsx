@@ -107,16 +107,19 @@ function LivePlan() {
         throw new Error("Not authenticated");
       }
       // Shared authenticated supabase client — invoke() auto-attaches the
-      // user's access token. Do NOT use fetch() or set headers manually.
-      const { data, error } = await supabase.functions.invoke<PlanResponse>("hyper-action", {
-        body: {},
-      });
+      // user's access token. AI-backed op: use the 60s timeout.
+      const { data, error } = await withTimeout(
+        supabase.functions.invoke<PlanResponse>("hyper-action", { body: {} }),
+        TIMEOUT_AI,
+        "live plan",
+      );
       if (error) {
         console.error("hyper-action failed:", error);
         throw error;
       }
       return data as PlanResponse;
     },
+    retry: false,
   });
 
   const { data: completedGoals } = useQuery({
