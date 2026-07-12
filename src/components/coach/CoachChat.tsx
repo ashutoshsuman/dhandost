@@ -117,9 +117,15 @@ export function CoachChat({
       }
     } catch (e) {
       console.error("financial-chat failed", e);
+      const isTimeout = e instanceof TimeoutError;
       setMessages((m) => [
         ...m,
-        { role: "assistant", content: "Something went wrong — please try again." },
+        {
+          role: "assistant",
+          content: isTimeout
+            ? "That took longer than expected — please try again."
+            : "Something went wrong — please try again.",
+        },
       ]);
     } finally {
       setPending(false);
