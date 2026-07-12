@@ -31,34 +31,55 @@ function FixedPage() {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<FixedExpense | null>(null);
 
-  const { data } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["fixed_expenses"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fixed_expenses")
-        .select("*")
-        .order("day_of_month", { ascending: true, nullsFirst: false });
+      const { data, error } = await withTimeout(
+        supabase
+          .from("fixed_expenses")
+          .select("*")
+          .order("day_of_month", { ascending: true, nullsFirst: false }),
+        TIMEOUT_FAST,
+        "load fixed expenses",
+      );
       if (error) throw error;
       return data as FixedExpense[];
     },
+    retry: 1,
   });
 
   const toggle = useMutation({
     mutationFn: async (f: FixedExpense) => {
-      const { error } = await supabase.from("fixed_expenses").update({ active: !f.active }).eq("id", f.id);
+      const { error } = await withTimeout(
+        supabase.from("fixed_expenses").update({ active: !f.active }).eq("id", f.id),
+        TIMEOUT_FAST,
+        "toggle fixed expense",
+      );
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fixed_expenses"] }),
+    onError: (err) => {
+      console.error("toggle fixed expense failed", err);
+      alert("Couldn't update — please try again.");
+    },
   });
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("fixed_expenses").delete().eq("id", id);
+      const { error } = await withTimeout(
+        supabase.from("fixed_expenses").delete().eq("id", id),
+        TIMEOUT_FAST,
+        "delete fixed expense",
+      );
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
       setConfirmDelete(null);
+    },
+    onError: (err) => {
+      console.error("delete fixed expense failed", err);
+      alert("Couldn't delete — please try again.");
     },
   });
 
