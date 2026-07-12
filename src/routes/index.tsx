@@ -24,6 +24,7 @@ import { supabase, type Goal } from "@/lib/supabase";
 import SpendSummary from "@/components/SpendSummary";
 import VariableSpendingTracker from "@/components/VariableSpendingTracker";
 import SpendingInsights from "@/components/SpendingInsights";
+import CyclingStatus from "@/components/CyclingStatus";
 
 export const Route = createFileRoute("/")({
   component: () => (
