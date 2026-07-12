@@ -73,6 +73,7 @@ export async function fetchThreePaths(input: {
   const data = await invokeFn<Partial<ThreePathsResponse> & Record<string, unknown>>(
     "clever-task",
     input,
+    { timeoutMs: 60_000 },
   );
   return {
     paths: (data.paths as PathOption[]) ?? [],
