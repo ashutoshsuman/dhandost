@@ -32,13 +32,18 @@ function GoalsPage() {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Goal | null>(null);
 
-  const { data, refetch } = useQuery({
+  const { data, refetch, isLoading, error } = useQuery({
     queryKey: ["goals"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("goals").select("*").order("priority", { ascending: true });
+      const { data, error } = await withTimeout(
+        supabase.from("goals").select("*").order("priority", { ascending: true }),
+        TIMEOUT_FAST,
+        "load goals",
+      );
       if (error) throw error;
       return data as Goal[];
     },
+    retry: 1,
   });
 
   const update = useMutation({
