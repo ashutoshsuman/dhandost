@@ -97,6 +97,19 @@ function FixedPage() {
 
       {open && <AddForm onClose={() => setOpen(false)} />}
 
+      {error && (
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 cursor-pointer text-left"
+        >
+          Couldn't load fixed expenses — tap to retry.
+        </button>
+      )}
+      {isLoading && !data && (
+        <p className="text-sm text-muted-foreground">Loading fixed expenses…</p>
+      )}
+
       <div className="rounded-lg border border-border bg-card overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
