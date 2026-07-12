@@ -24,6 +24,7 @@ import { supabase, type Goal } from "@/lib/supabase";
 import SpendSummary from "@/components/SpendSummary";
 import VariableSpendingTracker from "@/components/VariableSpendingTracker";
 import SpendingInsights from "@/components/SpendingInsights";
+import CyclingStatus from "@/components/CyclingStatus";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -238,7 +239,17 @@ function LivePlan() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        <p className="mt-4 text-sm text-muted-foreground">Computing your plan…</p>
+        <div className="mt-4">
+          <CyclingStatus
+            messages={[
+              "Computing your plan…",
+              "Reading your transactions…",
+              "Separating real income from transfers…",
+              "Calculating your headroom…",
+              "Finalising your live plan…",
+            ]}
+          />
+        </div>
       </div>
     );
   }
