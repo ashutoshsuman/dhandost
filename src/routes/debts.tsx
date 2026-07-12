@@ -39,16 +39,21 @@ function DebtsPage() {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Debt | null>(null);
 
-  const { data } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["debts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("debts")
-        .select("*")
-        .order("interest_rate_annual", { ascending: false });
+      const { data, error } = await withTimeout(
+        supabase
+          .from("debts")
+          .select("*")
+          .order("interest_rate_annual", { ascending: false }),
+        TIMEOUT_FAST,
+        "load debts",
+      );
       if (error) throw error;
       return (data ?? []).filter((d: Debt) => d.active !== false) as Debt[];
     },
+    retry: 1,
   });
 
   const del = useMutation({
