@@ -30,7 +30,7 @@ export function withTimeout<T>(
       );
     }, ms);
   });
-  return Promise.race([promise, timeout]).finally(() => {
+  return Promise.race([Promise.resolve(promise), timeout]).finally(() => {
     if (timer) clearTimeout(timer);
   }) as Promise<T>;
 }
