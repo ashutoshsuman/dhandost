@@ -162,12 +162,16 @@ function AddForm({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({ name: "", balance: "", interest_rate_annual: "" });
   const add = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("debts").insert({
-        name: form.name,
-        balance: parseFloat(form.balance),
-        interest_rate_annual: parseFloat(form.interest_rate_annual),
-        active: true,
-      });
+      const { error } = await withTimeout(
+        supabase.from("debts").insert({
+          name: form.name,
+          balance: parseFloat(form.balance),
+          interest_rate_annual: parseFloat(form.interest_rate_annual),
+          active: true,
+        }),
+        TIMEOUT_FAST,
+        "save debt",
+      );
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["debts"] }); onClose(); },
