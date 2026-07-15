@@ -66,6 +66,7 @@ function parseAmount(s: string): number | null {
 
 function ImportPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [rows, setRows] = useState<Record<string, string>[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [mapping, setMapping] = useState<Mapping>({
