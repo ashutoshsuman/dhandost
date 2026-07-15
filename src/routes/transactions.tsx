@@ -276,8 +276,10 @@ function PlanModal({
 
 
 
+
 function AddForm({ onClose, categories }: { onClose: () => void; categories: string[] }) {
   const qc = useQueryClient();
+  const { createOrMatch } = useCategoryOptions();
   const [form, setForm] = useState({
     occurred_at: new Date().toISOString().slice(0, 10),
     amount: "",
@@ -290,7 +292,10 @@ function AddForm({ onClose, categories }: { onClose: () => void; categories: str
 
   const add = useMutation({
     mutationFn: async () => {
-      const cat = customMode ? form.customCategory.trim() : form.category;
+      let cat = customMode ? form.customCategory.trim() : form.category;
+      if (customMode && cat) {
+        cat = await createOrMatch(cat);
+      }
       const payload: Record<string, unknown> = {
         occurred_at: form.occurred_at,
         amount: parseFloat(parseFloat(form.amount).toFixed(2)),
