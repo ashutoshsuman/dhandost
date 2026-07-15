@@ -6,7 +6,7 @@ import { supabase, type FixedExpense } from "@/lib/supabase";
 import { withTimeout, TIMEOUT_FAST } from "@/lib/withTimeout";
 import { formatINR } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
-import { DEFAULT_CATEGORIES } from "@/lib/categories";
+import { useCategoryOptions } from "@/lib/useCategories";
 import {
   AlertDialog,
   AlertDialogAction,
