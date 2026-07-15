@@ -1,10 +1,11 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
 import logoAsset from "@/assets/dhandost-logo.png.asset.json";
 const logo = logoAsset.url;
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
 import { withTimeout, TIMEOUT_SIGNOUT } from "@/lib/withTimeout";
 import { TrustBadge } from "@/components/TrustBadge";
 import { CoachLauncher } from "@/components/coach/CoachLauncher";
@@ -27,37 +28,14 @@ const nav: { to: string; label: string; tour?: string }[] = [
 ];
 
 function UserMenu() {
-  const [firstName, setFirstName] = useState<string>("");
+  const { profile } = useAuth();
   const [localOpen, setLocalOpen] = useState(false);
   const tour = useTour();
   const open = localOpen || tour.dropdownOpen;
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadName() {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-      if (!user || !mounted) return;
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!mounted) return;
-
-      const fullName = (data?.full_name ?? "").trim();
-      const idx = fullName.indexOf(" ");
-      setFirstName(idx === -1 ? fullName : fullName.slice(0, idx));
-    }
-
-    loadName();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const fullName = (profile?.full_name ?? "").trim();
+  const idx = fullName.indexOf(" ");
+  const firstName = idx === -1 ? fullName : fullName.slice(0, idx);
 
   return (
     <DropdownMenu
@@ -147,8 +125,10 @@ function UserMenu() {
 
 export function Layout({ children }: { children?: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const { userId } = useAuth();
   const { data: reviewCount = 0 } = useQuery({
-    queryKey: ["review-count"],
+    queryKey: ["review-count", userId],
+    enabled: !!userId,
     queryFn: async () => {
       const [{ count: catCount }, { count: stCount }] = await Promise.all([
         supabase
