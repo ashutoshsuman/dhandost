@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { parseFile } from "@/lib/parse-statement";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Layout } from "@/components/Layout";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import SecureUploadPanel from "@/components/SecureUploadPanel";
@@ -65,6 +66,7 @@ function parseAmount(s: string): number | null {
 
 function ImportPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [rows, setRows] = useState<Record<string, string>[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [mapping, setMapping] = useState<Mapping>({
@@ -137,14 +139,24 @@ function ImportPage() {
         const { error } = await supabase.from("transactions").insert(payload.slice(i, i + 500));
         if (error) throw error;
       }
+      return payload.length;
     },
-    onSuccess: () => {
+    onSuccess: (count) => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["compute-plan"] });
+      qc.invalidateQueries({ queryKey: ["review-count"] });
+      qc.invalidateQueries({ queryKey: ["variable-spending-insights"] });
+      qc.invalidateQueries({ queryKey: ["active-commitments"] });
       setRows([]); setHeaders([]); setFileName("");
       // fire-and-forget AI categorization of newly imported rows
       invokeFn("categorize-transactions", { limit: 500 })
-        .then(() => qc.invalidateQueries({ queryKey: ["transactions"] }))
+        .then(() => {
+          qc.invalidateQueries({ queryKey: ["transactions"] });
+          qc.invalidateQueries({ queryKey: ["review-count"] });
+        })
         .catch((e) => console.error("categorize-transactions failed", e));
+      toast.success(`Imported ${count} transaction${count === 1 ? "" : "s"}`);
+      navigate({ to: "/transactions" });
     },
   });
 
