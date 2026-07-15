@@ -73,10 +73,8 @@ function TransactionsPage() {
   });
 
 
-  // dynamic categories: defaults + any in-use custom ones
-  const dynamicCats = Array.from(
-    new Set([...DEFAULT_CATEGORIES, ...((txs ?? []).map((t) => t.category).filter(Boolean) as string[])]),
-  );
+  // categories: defaults + user's custom ones from user_categories
+  const { categories: dynamicCats } = useCategoryOptions();
 
   return (
     <div className="space-y-6">
