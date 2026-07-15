@@ -125,8 +125,10 @@ function UserMenu() {
 
 export function Layout({ children }: { children?: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const { userId } = useAuth();
   const { data: reviewCount = 0 } = useQuery({
-    queryKey: ["review-count"],
+    queryKey: ["review-count", userId],
+    enabled: !!userId,
     queryFn: async () => {
       const [{ count: catCount }, { count: stCount }] = await Promise.all([
         supabase
