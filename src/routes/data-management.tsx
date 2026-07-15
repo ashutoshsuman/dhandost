@@ -649,7 +649,7 @@ function DangerZone() {
     setBusy(true);
     setErr(null);
     try {
-      await invokeFn("reset-user-data", { confirmed: true, confirmation_phrase: "RESET" });
+      await invokeFn("super-processor", { confirmed: true, confirmation_phrase: "RESET" });
       try {
         Object.keys(localStorage)
           .filter((k) => k.startsWith("recovery_plan_active_") || k.startsWith("dhandost_"))
