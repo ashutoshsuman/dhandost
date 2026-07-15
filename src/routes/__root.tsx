@@ -10,6 +10,7 @@ import {
 import appCss from "../styles.css?url";
 import { CoachProvider } from "@/components/coach/CoachContext";
 import { AuthGate } from "@/components/auth/AuthGate";
+import { AuthProvider } from "@/lib/auth-context";
 import { TourProvider } from "@/components/Tour";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -67,13 +68,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthGate>
-        <TourProvider>
-          <CoachProvider>
-            <Outlet />
-          </CoachProvider>
-        </TourProvider>
-      </AuthGate>
+      <AuthProvider>
+        <AuthGate>
+          <TourProvider>
+            <CoachProvider>
+              <Outlet />
+            </CoachProvider>
+          </TourProvider>
+        </AuthGate>
+      </AuthProvider>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
