@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
-import { DEFAULT_CATEGORIES } from "@/lib/categories";
+import { useCategoryOptions, normalizeCategoryName } from "@/lib/useCategories";
 
 type Txn = {
   id: string;
@@ -23,33 +23,6 @@ function formatINR(n: number | string, currency = "₹") {
   return `${currency}${Math.round(Math.abs(Number(n) || 0)).toLocaleString("en-IN")}`;
 }
 
-async function fetchCategories(): Promise<string[]> {
-  const set = new Set<string>(DEFAULT_CATEGORIES);
-  const { data: tx } = await supabase
-    .from("transactions")
-    .select("category")
-    .not("category", "is", null);
-  for (const r of (tx as { category: string | null }[]) ?? []) {
-    const c = (r.category ?? "").trim();
-    if (c) set.add(c);
-  }
-  try {
-    const { data: fx } = await supabase
-      .from("fixed_expenses")
-      .select("category")
-      .not("category", "is", null);
-    for (const r of (fx as { category: string | null }[]) ?? []) {
-      const c = (r.category ?? "").trim();
-      if (c) set.add(c);
-    }
-  } catch {
-    /* ignore */
-  }
-  const list = [...set].sort();
-  if (!list.includes("Other")) list.push("Other");
-  return list;
-}
-
 async function saveCorrection(transactionId: string, category: string) {
   return invokeFn("learn-category-rule", {
     transaction_id: transactionId,
@@ -67,20 +40,13 @@ export function CategoryEditor({
   categories?: string[];
   onSaved?: (id: string, category: string, result: unknown) => void;
 }) {
-  const [cats, setCats] = useState<string[]>(catsProp ?? []);
+  const { categories: hookCats, createOrMatch } = useCategoryOptions();
+  const cats = catsProp ?? hookCats;
   const [value, setValue] = useState(transaction.category ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
-
-  useEffect(() => {
-    if (!catsProp) fetchCategories().then(setCats).catch(() => {});
-  }, [catsProp]);
-
-  useEffect(() => {
-    if (catsProp) setCats(catsProp);
-  }, [catsProp]);
 
   async function applyCategory(next: string) {
     setSaving(true);
@@ -89,13 +55,6 @@ export function CategoryEditor({
       const result = await saveCorrection(transaction.id, next);
       setValue(next);
       setSaved(true);
-      if (!cats.includes(next)) {
-        setCats((prev) => {
-          const merged = [...prev, next].filter((c, i, a) => a.indexOf(c) === i);
-          merged.sort();
-          return merged;
-        });
-      }
       onSaved?.(transaction.id, next, result);
       setTimeout(() => setSaved(false), 1500);
     } catch (err) {
@@ -126,7 +85,7 @@ export function CategoryEditor({
   }
 
   async function confirmCreate() {
-    const name = newName.trim();
+    const name = normalizeCategoryName(newName);
     if (!name) {
       setCreating(false);
       return;
@@ -135,10 +94,13 @@ export function CategoryEditor({
       alert("Category name should be 40 characters or fewer.");
       return;
     }
-    const existing = cats.find((c) => c.toLowerCase() === name.toLowerCase());
-    const finalName = existing ?? name;
     setCreating(false);
-    await applyCategory(finalName);
+    try {
+      const canonical = await createOrMatch(name);
+      await applyCategory(canonical);
+    } catch (err) {
+      alert((err as Error).message);
+    }
   }
 
   function cancelCreate() {
@@ -221,23 +183,19 @@ export function CategoryEditor({
 
 export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
   const [rows, setRows] = useState<Txn[]>([]);
-  const [cats, setCats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
+  const { categories: cats } = useCategoryOptions();
 
   async function load() {
     setLoading(true);
-    const [{ data }, categories] = await Promise.all([
-      supabase
-        .from("transactions")
-        .select("id,amount,direction,category,category_source,needs_ai_categorization,occurred_at,description")
-        .or("category_source.eq.ai,needs_ai_categorization.eq.true")
-        .order("occurred_at", { ascending: false })
-        .limit(200),
-      fetchCategories(),
-    ]);
+    const { data } = await supabase
+      .from("transactions")
+      .select("id,amount,direction,category,category_source,needs_ai_categorization,occurred_at,description")
+      .or("category_source.eq.ai,needs_ai_categorization.eq.true")
+      .order("occurred_at", { ascending: false })
+      .limit(200);
     setRows((data as Txn[]) ?? []);
-    setCats(categories);
     setLoading(false);
   }
 

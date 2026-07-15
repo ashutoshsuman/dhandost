@@ -6,7 +6,7 @@ import { supabase, type FixedExpense } from "@/lib/supabase";
 import { withTimeout, TIMEOUT_FAST } from "@/lib/withTimeout";
 import { formatINR } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
-import { DEFAULT_CATEGORIES } from "@/lib/categories";
+import { useCategoryOptions } from "@/lib/useCategories";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -177,14 +177,20 @@ function FixedPage() {
 
 function AddForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ name: "", amount: "", category: "", day_of_month: "" });
+  const { categories, createOrMatch } = useCategoryOptions();
+  const [form, setForm] = useState({ name: "", amount: "", category: "", customCategory: "", day_of_month: "" });
+  const [customMode, setCustomMode] = useState(false);
   const add = useMutation({
     mutationFn: async () => {
+      let cat = customMode ? form.customCategory.trim() : form.category;
+      if (customMode && cat) {
+        cat = await createOrMatch(cat);
+      }
       const { error } = await withTimeout(
         supabase.from("fixed_expenses").insert({
           name: form.name,
           amount: parseFloat(form.amount),
-          category: form.category || null,
+          category: cat || null,
           day_of_month: form.day_of_month ? parseInt(form.day_of_month) : null,
           active: true,
         }),
@@ -205,10 +211,29 @@ function AddForm({ onClose }: { onClose: () => void }) {
         <Field label="Name"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></Field>
         <Field label="Amount (₹)"><Input type="number" step="0.01" min="0" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required /></Field>
         <Field label="Category">
-          <Select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-            <option value="">—</option>
-            {DEFAULT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </Select>
+          {customMode ? (
+            <div className="flex gap-1">
+              <Input
+                autoFocus
+                value={form.customCategory}
+                onChange={(e) => setForm({ ...form, customCategory: e.target.value })}
+                placeholder="Custom"
+              />
+              <button type="button" onClick={() => setCustomMode(false)} className="text-xs text-muted-foreground px-2 cursor-pointer">↩</button>
+            </div>
+          ) : (
+            <Select
+              value={form.category}
+              onChange={(e) => {
+                if (e.target.value === "__custom__") { setCustomMode(true); setForm({ ...form, category: "" }); }
+                else setForm({ ...form, category: e.target.value });
+              }}
+            >
+              <option value="">—</option>
+              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+              <option value="__custom__">+ Add custom</option>
+            </Select>
+          )}
         </Field>
         <Field label="Day of month"><Input type="number" min="1" max="31" value={form.day_of_month} onChange={(e) => setForm({ ...form, day_of_month: e.target.value })} /></Field>
       </div>

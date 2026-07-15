@@ -9,7 +9,7 @@ import { invokeFn } from "@/lib/invokeFn";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import CyclingStatus from "@/components/CyclingStatus";
-import { DEFAULT_CATEGORIES } from "@/lib/categories";
+import { useCategoryOptions } from "@/lib/useCategories";
 import { fetchThreePaths, storePathsResponse, getAppliedPlanTxIds } from "@/lib/three-paths";
 import { CategoryEditor as ReviewCategoryEditor } from "@/components/CategoryReview";
 import {
@@ -73,10 +73,8 @@ function TransactionsPage() {
   });
 
 
-  // dynamic categories: defaults + any in-use custom ones
-  const dynamicCats = Array.from(
-    new Set([...DEFAULT_CATEGORIES, ...((txs ?? []).map((t) => t.category).filter(Boolean) as string[])]),
-  );
+  // categories: defaults + user's custom ones from user_categories
+  const { categories: dynamicCats } = useCategoryOptions();
 
   return (
     <div className="space-y-6">
@@ -278,8 +276,10 @@ function PlanModal({
 
 
 
+
 function AddForm({ onClose, categories }: { onClose: () => void; categories: string[] }) {
   const qc = useQueryClient();
+  const { createOrMatch } = useCategoryOptions();
   const [form, setForm] = useState({
     occurred_at: new Date().toISOString().slice(0, 10),
     amount: "",
@@ -292,7 +292,10 @@ function AddForm({ onClose, categories }: { onClose: () => void; categories: str
 
   const add = useMutation({
     mutationFn: async () => {
-      const cat = customMode ? form.customCategory.trim() : form.category;
+      let cat = customMode ? form.customCategory.trim() : form.category;
+      if (customMode && cat) {
+        cat = await createOrMatch(cat);
+      }
       const payload: Record<string, unknown> = {
         occurred_at: form.occurred_at,
         amount: parseFloat(parseFloat(form.amount).toFixed(2)),
