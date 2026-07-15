@@ -9,7 +9,7 @@ import { invokeFn } from "@/lib/invokeFn";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import CyclingStatus from "@/components/CyclingStatus";
-import { DEFAULT_CATEGORIES } from "@/lib/categories";
+import { useCategoryOptions } from "@/lib/useCategories";
 import { fetchThreePaths, storePathsResponse, getAppliedPlanTxIds } from "@/lib/three-paths";
 import { CategoryEditor as ReviewCategoryEditor } from "@/components/CategoryReview";
 import {
