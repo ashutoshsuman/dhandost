@@ -6,6 +6,7 @@ export type AllocationStep = {
   action: string;
   monthly_amount?: number;
   duration_months?: number;
+  duration_days?: number;
 };
 
 export type GoalImpact = {
@@ -93,11 +94,21 @@ export async function applyPath(input: {
   chosen_path_label: string;
   chosen_index: number;
   priority_value?: string | null;
+  allocation: AllocationStep[];
 }): Promise<unknown> {
   return invokeFn("apply-path", {
     path_selection_id: input.path_selection_id,
     chosen_path_label: input.chosen_path_label,
     chosen_index: input.chosen_index,
+    allocation: input.allocation.map((step) =>
+      step.action === "delay_goal"
+        ? {
+            ...step,
+            duration_days: step.duration_days ?? (step.duration_months ?? 0) * 30,
+            amount: step.amount,
+          }
+        : step,
+    ),
     ...(input.priority_value ? { priority_value: input.priority_value } : {}),
   });
 }
