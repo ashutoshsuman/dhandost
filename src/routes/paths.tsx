@@ -59,15 +59,22 @@ function renderAllocation(
       };
     }
     case "delay_goal": {
-      const months = a.duration_months;
+      const days = a.duration_days;
+      const months = days == null ? a.duration_months : Math.round(days / 30);
       const monthly = a.monthly_amount;
       const amount = a.amount;
-      if (!months || !monthly) {
+      if (days == null && !months) {
         return { primary: `→ Delay ${a.target}` };
       }
+      if (days != null && days < 30) {
+        return {
+          primary: `→ Delay ${a.target} by ${days} ${days === 1 ? "day" : "days"}`,
+          secondary: `Redirects ${inr(amount)} of this month's ${inr(monthly ?? 0)} goal saving`,
+        };
+      }
       return {
-        primary: `→ Delay ${a.target} by ${months} months`,
-        secondary: `Redirects ${inr(monthly)}/mo of saving · absorbs ${inr(amount ?? 0)}`,
+        primary: `→ Delay ${a.target} by ${months} ${months === 1 ? "month" : "months"}`,
+        secondary: `Redirects ${inr(monthly ?? 0)}/mo of saving · absorbs ${inr(amount)}`,
       };
     }
     case "keep_flexible":
@@ -233,6 +240,7 @@ function PathsPage() {
           chosen_path_label: path.label,
           chosen_index: index,
           priority_value: path.priority_value ?? null,
+          allocation: path.allocation,
         });
 
         // Hide "Help me with a plan" for this transaction going forward.
