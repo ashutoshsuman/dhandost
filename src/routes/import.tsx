@@ -155,6 +155,13 @@ function ImportPage() {
           qc.invalidateQueries({ queryKey: ["review-count"] });
         })
         .catch((e) => console.error("categorize-transactions failed", e));
+      // fire-and-forget baseline derivation for the Variable Spending Tracker
+      invokeFn("derive-variable-expenses", {})
+        .then(() => {
+          qc.invalidateQueries({ queryKey: ["variable-spending-insights"] });
+          qc.invalidateQueries({ queryKey: ["compute-plan"] });
+        })
+        .catch((e) => console.error("derive-variable-expenses failed", e));
       toast.success(`Imported ${count} transaction${count === 1 ? "" : "s"}`);
       navigate({ to: "/transactions" });
     },

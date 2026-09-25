@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { supabase, type FixedExpense } from "@/lib/supabase";
+import { invokeFn } from "@/lib/invokeFn";
 import { withTimeout, TIMEOUT_FAST } from "@/lib/withTimeout";
 import { formatINR } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
@@ -25,6 +26,17 @@ export const Route = createFileRoute("/fixed")({
     </Layout>
   ),
 });
+
+// Fire-and-forget: recompute variable spending baselines after fixed expenses change.
+// Failures are logged only — the save/toggle/delete itself stays successful.
+function rederiveBaselines(qc: ReturnType<typeof useQueryClient>) {
+  invokeFn("derive-variable-expenses", {})
+    .then(() => {
+      qc.invalidateQueries({ queryKey: ["variable-spending-insights"] });
+      qc.invalidateQueries({ queryKey: ["compute-plan"] });
+    })
+    .catch((e) => console.error("derive-variable-expenses failed", e));
+}
 
 function FixedPage() {
   const qc = useQueryClient();
@@ -57,7 +69,10 @@ function FixedPage() {
       );
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fixed_expenses"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      rederiveBaselines(qc);
+    },
     onError: (err) => {
       console.error("toggle fixed expense failed", err);
       alert("Couldn't update — please try again.");
@@ -76,6 +91,7 @@ function FixedPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
       setConfirmDelete(null);
+      rederiveBaselines(qc);
     },
     onError: (err) => {
       console.error("delete fixed expense failed", err);
@@ -199,7 +215,11 @@ function AddForm({ onClose }: { onClose: () => void }) {
       );
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["fixed_expenses"] }); onClose(); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      onClose();
+      rederiveBaselines(qc);
+    },
   });
 
   return (
