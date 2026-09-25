@@ -26,6 +26,17 @@ export const Route = createFileRoute("/fixed")({
   ),
 });
 
+// Fire-and-forget: recompute variable spending baselines after fixed expenses change.
+// Failures are logged only — the save/toggle/delete itself stays successful.
+function rederiveBaselines(qc: ReturnType<typeof useQueryClient>) {
+  invokeFn("derive-variable-expenses", {})
+    .then(() => {
+      qc.invalidateQueries({ queryKey: ["variable-spending-insights"] });
+      qc.invalidateQueries({ queryKey: ["compute-plan"] });
+    })
+    .catch((e) => console.error("derive-variable-expenses failed", e));
+}
+
 function FixedPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
