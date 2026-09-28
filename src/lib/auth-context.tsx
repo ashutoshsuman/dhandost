@@ -56,19 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         has_completed_tour: data?.has_completed_tour ?? null,
       };
       setProfile(next);
-      if (next.full_name) {
-        try {
-          pendo.identify({
-            visitor: {
-              id: userId,
-              full_name: next.full_name,
-              has_completed_tour: next.has_completed_tour ?? false,
-            },
-          });
-        } catch {
-          /* ignore */
-        }
-      }
     } finally {
       setIsProfileLoading(false);
     }
