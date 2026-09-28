@@ -96,7 +96,6 @@ function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={async () => {
-            try { pendo.clearSession(); } catch { /* ignore */ }
             try {
               await withTimeout(supabase.auth.signOut(), TIMEOUT_SIGNOUT, "sign out");
             } catch (err) {
