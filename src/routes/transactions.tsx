@@ -1,3 +1,4 @@
+import { track, categorizedCount } from "@/lib/track";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -313,7 +314,8 @@ function AddForm({ onClose, categories }: { onClose: () => void; categories: str
       // to finish so the category appears immediately on refresh.
       if (!cat) {
         try {
-          await invokeFn("categorize-transactions", { limit: 10 });
+          const r = await invokeFn("categorize-transactions", { limit: 10 });
+          void track("transactions_categorized", { count: categorizedCount(r) });
         } catch (e) {
           console.error("categorize-transactions failed", e);
         }

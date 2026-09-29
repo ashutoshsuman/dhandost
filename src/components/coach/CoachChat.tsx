@@ -1,3 +1,4 @@
+import { track } from "@/lib/track";
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/lib/supabase";
@@ -105,6 +106,7 @@ export function CoachChat({
           { role: "assistant", content: "Something went wrong — please try again." },
         ]);
       } else {
+        void track("coach_message_sent");
         if (response.conversation_id) setConversationId(response.conversation_id);
         const replyText = stripRepeatedPriorOpening(response.reply ?? "", previousMessages);
         setMessages((m) => [
