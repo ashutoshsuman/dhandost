@@ -1,3 +1,4 @@
+import { track } from "@/lib/track";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -230,7 +231,7 @@ function AddForm({ onClose }: { onClose: () => void }) {
       );
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["goals"] }); onClose(); },
+    onSuccess: () => { void track("goal_created"); qc.invalidateQueries({ queryKey: ["goals"] }); onClose(); },
   });
 
   return (

@@ -1,3 +1,4 @@
+import { track, categorizedCount } from "@/lib/track";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { parseFile } from "@/lib/parse-statement";
 import { useMemo, useState } from "react";
@@ -147,10 +148,12 @@ function ImportPage() {
       qc.invalidateQueries({ queryKey: ["review-count"] });
       qc.invalidateQueries({ queryKey: ["variable-spending-insights"] });
       qc.invalidateQueries({ queryKey: ["active-commitments"] });
+      void track("statement_imported", { rows: count });
       setRows([]); setHeaders([]); setFileName("");
       // fire-and-forget AI categorization of newly imported rows
       invokeFn("categorize-transactions", { limit: 500 })
-        .then(() => {
+        .then((r) => {
+          void track("transactions_categorized", { count: categorizedCount(r) });
           qc.invalidateQueries({ queryKey: ["transactions"] });
           qc.invalidateQueries({ queryKey: ["review-count"] });
         })

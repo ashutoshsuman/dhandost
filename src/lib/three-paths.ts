@@ -1,3 +1,4 @@
+import { track } from "@/lib/track";
 import { invokeFn } from "@/lib/invokeFn";
 
 export type AllocationStep = {
@@ -76,6 +77,7 @@ export async function fetchThreePaths(input: {
     input,
     { timeoutMs: 60_000 },
   );
+  void track("three_paths_generated");
   return {
     paths: (data.paths as PathOption[]) ?? [],
     trigger_type: input.trigger_type,
@@ -96,7 +98,7 @@ export async function applyPath(input: {
   priority_value?: string | null;
   allocation: AllocationStep[];
 }): Promise<unknown> {
-  return invokeFn("apply-path", {
+  const res = await invokeFn("apply-path", {
     path_selection_id: input.path_selection_id,
     chosen_path_label: input.chosen_path_label,
     chosen_index: input.chosen_index,
@@ -111,6 +113,8 @@ export async function applyPath(input: {
     ),
     ...(input.priority_value ? { priority_value: input.priority_value } : {}),
   });
+  void track("path_applied");
+  return res;
 }
 
 
