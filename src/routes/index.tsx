@@ -25,7 +25,7 @@ import ActiveCommitmentsSection, { type ActiveCommitment } from "@/components/Ac
 import SpendingInsights from "@/components/SpendingInsights";
 import CyclingStatus from "@/components/CyclingStatus";
 import GoalTargetDateEditor, { TargetDatePassedBadge } from "@/components/GoalTargetDateEditor";
-import { formatGoalDate } from "@/lib/goal-utils";
+import { formatGoalDate, goalSavingsExplanation, revisedGoalNote } from "@/lib/goal-utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -55,6 +55,8 @@ type PlanGoal = {
   target_lapsed: boolean;
   days_remaining: number;
   priority: number;
+  original_target_date?: string | null;
+  target_revised_at?: string | null;
 };
 
 type ParkedBalance = {
@@ -414,6 +416,7 @@ function GoalCard({ goal }: { goal: PlanGoal }) {
   const [open, setOpen] = useState(false);
   const pct = Math.min(100, Math.max(0, goal.percent_complete));
   const lapsed = goal.target_lapsed;
+  const revisedNote = revisedGoalNote(goal);
   const styles = statusStyles(lapsed ? "behind" : goal.status);
 
   return (
@@ -432,6 +435,9 @@ function GoalCard({ goal }: { goal: PlanGoal }) {
               <p className="text-xs text-muted-foreground mt-0.5">
                 Target {formatGoalDate(goal.target_date)}
               </p>
+            )}
+            {revisedNote && (
+              <p className="text-xs text-muted-foreground mt-0.5">{revisedNote}</p>
             )}
           </div>
           {lapsed ? (
@@ -490,10 +496,11 @@ function GoalCard({ goal }: { goal: PlanGoal }) {
       ) : (
         open && (
           <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground leading-relaxed">
-            Required monthly savings is derived from the gap between{" "}
-            {formatINR(goal.target_amount - goal.current_amount)} remaining and the months until{" "}
-            {formatDate(goal.target_date)}. Status reflects whether your current pace meets that
-            schedule.
+            {goalSavingsExplanation(
+              goal.target_amount - goal.current_amount,
+              goal.target_date,
+              goal,
+            )}
           </div>
         )
       )}

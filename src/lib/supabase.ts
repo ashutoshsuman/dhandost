@@ -31,6 +31,8 @@ export type Goal = {
   priority: number | null;
   status: "active" | "paused" | "completed";
   created_at: string;
+  original_target_date?: string | null;
+  target_revised_at?: string | null;
 };
 
 export type FixedExpense = {

@@ -1,3 +1,5 @@
+import { formatDate, formatINR } from "./format";
+
 export function toLocalDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -60,4 +62,34 @@ export function formatDelayGoalDuration(
 
   if (!durationMonths) return null;
   return `${durationMonths} ${durationMonths === 1 ? "month" : "months"}`;
+}
+
+export type GoalRevision = {
+  original_target_date?: string | null;
+  target_revised_at?: string | null;
+};
+
+export function isGoalRevised(revision: GoalRevision): boolean {
+  return parseDateOnly(revision.original_target_date) !== undefined;
+}
+
+/** "Revised · originally 09 Sep 2026", or null when the goal was never revised. */
+export function revisedGoalNote(revision: GoalRevision): string | null {
+  if (!isGoalRevised(revision)) return null;
+  return `Revised · originally ${formatGoalDate(revision.original_target_date as string)}`;
+}
+
+/** Explanation shown when a goal card is expanded. */
+export function goalSavingsExplanation(
+  remaining: number,
+  targetDate: string,
+  revision: GoalRevision,
+): string {
+  if (!isGoalRevised(revision)) {
+    return `Required monthly savings is derived from the gap between ${formatINR(remaining)} remaining and the months until ${formatDate(targetDate)}. Status reflects whether your current pace meets that schedule.`;
+  }
+  const measuredFrom = parseDateOnly(revision.target_revised_at)
+    ? `, measured from when you set this date (${formatGoalDate(revision.target_revised_at as string)})`
+    : "";
+  return `Required monthly savings is the ${formatINR(remaining)} still needed spread over the time until ${formatGoalDate(targetDate)}. Status compares your progress with that pace${measuredFrom}.`;
 }

@@ -11,3 +11,4 @@
 - [x] Exclude plan-handled surprise expenses from current-month tracker spend.
 - [x] Hide "Edit target date" on completed goals; style it as a secondary outline button.
 - [x] Show goal monthly saving targets in whole rupees via one shared helper.
+- [x] Show "Revised · originally {date}" on goal cards and the revised explanation wording.

@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import MoveMoney from "@/components/MoveMoney";
 import GoalTargetDateEditor, { TargetDatePassedBadge } from "@/components/GoalTargetDateEditor";
-import { formatGoalDate, isGoalTargetPassed } from "@/lib/goal-utils";
+import { formatGoalDate, isGoalTargetPassed, revisedGoalNote } from "@/lib/goal-utils";
 
 export const Route = createFileRoute("/goals")({
   component: () => (
@@ -116,6 +116,7 @@ function GoalsPage() {
           const isCompleted = g.status === "completed";
           const isFullyFunded = tgt > 0 && cur >= tgt;
           const lapsed = isGoalTargetPassed(g.target_date, isCompleted);
+          const revisedNote = revisedGoalNote(g);
           return (
             <div key={g.id} className={`rounded-lg border border-border bg-card p-5 ${isCompleted ? "ring-1 ring-green-500/30" : ""}`}>
               <div className="flex justify-between items-start">
@@ -130,6 +131,9 @@ function GoalsPage() {
                     {lapsed && <TargetDatePassedBadge />}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">by {formatGoalDate(g.target_date)}</p>
+                  {revisedNote && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{revisedNote}</p>
+                  )}
                 </div>
                 <Button variant="destructive" onClick={() => setConfirmDelete(g)}>Delete</Button>
               </div>
