@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarIcon } from "lucide-react";
+import { CalendarDays, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui-primitives";
 import { Calendar } from "@/components/ui/calendar";
@@ -13,6 +13,7 @@ type GoalTargetDateEditorProps = {
   goalId: string;
   targetDate: string;
   lapsed: boolean;
+  isCompleted?: boolean;
   onSaved?: () => void;
 };
 
@@ -28,6 +29,7 @@ export default function GoalTargetDateEditor({
   goalId,
   targetDate,
   lapsed,
+  isCompleted = false,
   onSaved,
 }: GoalTargetDateEditorProps) {
   const queryClient = useQueryClient();
@@ -64,10 +66,18 @@ export default function GoalTargetDateEditor({
     },
   });
 
+  if (isCompleted) return null;
+
   if (!lapsed && !editing) {
     return (
       <div className="mt-3">
-        <Button type="button" variant="ghost" onClick={() => setEditing(true)}>
+        <Button
+          type="button"
+          variant="outline"
+          className="gap-1.5 text-primary"
+          onClick={() => setEditing(true)}
+        >
+          <CalendarDays className="h-4 w-4" />
           Edit target date
         </Button>
       </div>

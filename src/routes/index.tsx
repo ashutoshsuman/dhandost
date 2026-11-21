@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 import { Layout } from "@/components/Layout";
-import { formatINR, formatDate } from "@/lib/format";
+import { formatINR, formatINRWhole, formatDate } from "@/lib/format";
 import { supabase, type Goal } from "@/lib/supabase";
 import { withTimeout, TIMEOUT_AI } from "@/lib/withTimeout";
 import SpendSummary from "@/components/SpendSummary";
@@ -466,7 +466,7 @@ function GoalCard({ goal }: { goal: PlanGoal }) {
             <p className="text-xs text-foreground/80">
               Save{" "}
               <span className="tabular-nums font-medium">
-                {formatINR(goal.required_monthly_savings)}
+                {formatINRWhole(goal.required_monthly_savings)}
               </span>
               /month to stay on track
             </p>

@@ -114,6 +114,7 @@ function GoalsPage() {
           const tgt = Number(g.target_amount);
           const pct = Math.min(100, (cur / tgt) * 100);
           const isCompleted = g.status === "completed";
+          const isFullyFunded = tgt > 0 && cur >= tgt;
           const lapsed = isGoalTargetPassed(g.target_date, isCompleted);
           return (
             <div key={g.id} className={`rounded-lg border border-border bg-card p-5 ${isCompleted ? "ring-1 ring-green-500/30" : ""}`}>
@@ -153,6 +154,7 @@ function GoalsPage() {
                 goalId={g.id}
                 targetDate={g.target_date}
                 lapsed={lapsed}
+                isCompleted={isCompleted || isFullyFunded}
               />
             </div>
           );
