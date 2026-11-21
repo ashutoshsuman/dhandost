@@ -1,5 +1,5 @@
 # Current tasks
 
-- [x] Add lapsed-goal messaging and target-date editing on Goals and Live Plan.
-- [x] Update Three Paths delay durations and lapsed-goal guidance.
-- [x] Run focused tests and verify the affected screens.
+- [x] Add the informational Set aside card and rename the monthly parked-savings row.
+- [x] Use the Live Plan API's target_lapsed flag on goal cards.
+- [x] Verify parked balances, headroom, and lapsed-goal behaviour.

@@ -27,7 +27,7 @@ import VariableSpendingTracker from "@/components/VariableSpendingTracker";
 import SpendingInsights from "@/components/SpendingInsights";
 import CyclingStatus from "@/components/CyclingStatus";
 import GoalTargetDateEditor, { TargetDatePassedBadge } from "@/components/GoalTargetDateEditor";
-import { formatGoalDate, isGoalTargetPassed } from "@/lib/goal-utils";
+import { formatGoalDate } from "@/lib/goal-utils";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -46,6 +46,8 @@ type PlanGoal = {
   status: "on_track" | "at_risk" | "behind" | string;
   percent_complete: number;
   target_date: string;
+  target_lapsed: boolean;
+  days_remaining: number;
   priority: number;
 };
 
@@ -82,12 +84,19 @@ function isVisibleCommitment(commitment: ActiveCommitment) {
   return visibleCommitmentStatuses.has(commitment.status ?? "active");
 }
 
+type ParkedBalance = {
+  label: string;
+  amount: number;
+};
+
 type PlanResponse = {
   expected_monthly_income: number;
   total_fixed_outflows: number;
   total_goal_savings_required: number;
   discretionary_headroom: number;
   total_parked_savings?: number;
+  total_parked_balance?: number;
+  parked_balances?: ParkedBalance[];
   total_committed_reductions?: number;
   projected_discretionary_headroom?: number;
   active_commitments?: ActiveCommitment[];
@@ -560,7 +569,7 @@ function LivePlan() {
         />
         {(data.total_parked_savings ?? 0) > 0 && (
           <BreakdownRow
-            label="Parked savings"
+            label="Set aside this month"
             amount={data.total_parked_savings ?? 0}
             prefix="−"
             detail="Money set aside to your emergency fund or investment via confirmed savings commitments. Already excluded from discretionary headroom."
@@ -575,6 +584,21 @@ function LivePlan() {
         />
       </section>
 
+      {(data.total_parked_balance ?? 0) > 0 && (
+        <section className="rounded-xl border border-border bg-card px-4 py-3">
+          <h2 className="text-sm font-medium">Set aside</h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {(data.parked_balances ?? []).map((balance, index) => (
+              <li key={`${balance.label}-${index}`} className="tabular-nums">
+                {balance.label} — {formatINR(balance.amount)}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Money set aside over time. This is not subtracted from headroom.
+          </p>
+        </section>
+      )}
 
       {/* Debt */}
       {data.total_debt_balance > 0 && (
@@ -680,7 +704,7 @@ function BreakdownRow({
 function GoalCard({ goal }: { goal: PlanGoal }) {
   const [open, setOpen] = useState(false);
   const pct = Math.min(100, Math.max(0, goal.percent_complete));
-  const lapsed = isGoalTargetPassed(goal.target_date, goal.status === "completed");
+  const lapsed = goal.target_lapsed;
   const styles = statusStyles(lapsed ? "behind" : goal.status);
 
   return (
