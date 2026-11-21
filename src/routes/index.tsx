@@ -298,7 +298,9 @@ function LivePlan() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-10 pb-8">
-      <SpendSummary />
+      {/* Headroom is handed down from the same compute-plan query below —
+          no second request and no recomputation in the card. */}
+      <SpendSummary headroom={data.discretionary_headroom} headroomStatus="ready" />
 
       {/* Breakdown */}
       <section data-tour="live-plan-overview" className="rounded-xl border border-border bg-card divide-y divide-border">

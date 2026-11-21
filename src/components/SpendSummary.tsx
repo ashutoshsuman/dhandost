@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { supabase } from "@/lib/supabase";
+import { describeHeadroom } from "@/lib/headroom-line";
 
 const PALETTE = [
   "#1a9c6e",
@@ -34,12 +35,58 @@ function monthLabel(offset = 0) {
   return dt.toLocaleString("en-IN", { month: "long", year: "numeric" });
 }
 
+function HeadroomLine({
+  status,
+  headroom,
+  show,
+}: {
+  status: "loading" | "ready" | "error";
+  headroom?: number | null;
+  show: boolean;
+}) {
+  if (!show) return null;
+
+  if (status === "loading") {
+    return <div className="mt-1.5 h-3 w-40 animate-pulse rounded bg-muted" aria-hidden="true" />;
+  }
+
+  // A failed plan request hides the line; the page's own error handling covers it.
+  if (status !== "ready" || typeof headroom !== "number" || !Number.isFinite(headroom)) {
+    return null;
+  }
+
+  const line = describeHeadroom(headroom);
+
+  return (
+    <p className="mt-1.5 text-xs text-muted-foreground tabular-nums">
+      {line.emphasis && (
+        <span
+          className="font-semibold"
+          style={{ color: line.tone === "negative" ? "var(--destructive)" : "var(--primary)" }}
+        >
+          {line.emphasis}
+        </span>
+      )}
+      {line.rest}
+    </p>
+  );
+}
+
 export default function SpendSummary({
   transactions: txnsProp,
   currency = "₹",
+  headroom,
+  headroomStatus = "ready",
 }: {
   transactions?: Txn[];
   currency?: string;
+  /**
+   * discretionary_headroom from the compute-plan (hyper-action) query, passed
+   * down by the caller — this component never recomputes or re-requests it.
+   */
+  headroom?: number | null;
+  /** loading shows a skeleton line, error hides it, ready shows the sentence. */
+  headroomStatus?: "loading" | "ready" | "error";
 }) {
   const [view, setView] = useState<"breakdown" | "compare">("breakdown");
   const [transactions, setTransactions] = useState<Txn[]>(txnsProp ?? []);
@@ -152,6 +199,11 @@ export default function SpendSummary({
         <div>
           <h2 className="text-base font-semibold">Spending</h2>
           <p className="text-xs text-muted-foreground mt-0.5">{monthLabel(0)}</p>
+          <HeadroomLine
+            status={headroomStatus}
+            headroom={headroom}
+            show={view === "breakdown"}
+          />
         </div>
         <div className="flex gap-1 bg-secondary rounded-lg p-0.5">
           <button
