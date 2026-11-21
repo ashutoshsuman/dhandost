@@ -9,3 +9,5 @@
 - [x] Show discretionary headroom as a line under the Spending card title.
 - [x] Refresh variable baselines after transaction, category, deletion, and path-choice events.
 - [x] Exclude plan-handled surprise expenses from current-month tracker spend.
+- [x] Hide "Edit target date" on completed goals; style it as a secondary outline button.
+- [x] Show goal monthly saving targets in whole rupees via one shared helper.
