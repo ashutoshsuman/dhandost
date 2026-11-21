@@ -35,7 +35,8 @@ type InsightsResponse = {
 import { invokeFn } from "@/lib/invokeFn";
 
 function statusFor(actual: number, baseline: number, provided?: Status): Status {
-  if (provided) return provided;
+  if (provided && provided in statusStyles) return provided;
+  if (provided) console.warn("[VariableSpendingTracker] unknown status:", provided);
   if (baseline <= 0) return actual > 0 ? "over" : "under";
   if (actual <= baseline) return "under";
   if (actual <= baseline * 1.1) return "within";
@@ -103,7 +104,7 @@ export default function VariableSpendingTracker() {
   );
 
   const overall = statusFor(data.total_actual, data.total_baseline);
-  const overallStyles = statusStyles[overall];
+  const overallStyles = statusStyles[overall] ?? statusStyles.within;
 
   return (
     <section className="space-y-3">
@@ -149,7 +150,7 @@ export default function VariableSpendingTracker() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {sorted.map((c) => {
             const s = statusFor(c.actual, c.baseline, c.status);
-            const st = statusStyles[s];
+            const st = statusStyles[s] ?? statusStyles.within;
             return (
               <div
                 key={c.category}
