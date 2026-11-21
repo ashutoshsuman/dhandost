@@ -19,6 +19,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import MoveMoney from "@/components/MoveMoney";
+import GoalTargetDateEditor, { TargetDatePassedBadge } from "@/components/GoalTargetDateEditor";
+import { formatGoalDate, isGoalTargetPassed } from "@/lib/goal-utils";
 
 export const Route = createFileRoute("/goals")({
   component: () => (
@@ -112,6 +114,7 @@ function GoalsPage() {
           const tgt = Number(g.target_amount);
           const pct = Math.min(100, (cur / tgt) * 100);
           const isCompleted = g.status === "completed";
+          const lapsed = isGoalTargetPassed(g.target_date, isCompleted);
           return (
             <div key={g.id} className={`rounded-lg border border-border bg-card p-5 ${isCompleted ? "ring-1 ring-green-500/30" : ""}`}>
               <div className="flex justify-between items-start">
@@ -123,8 +126,9 @@ function GoalsPage() {
                         ✓ Complete
                       </span>
                     )}
+                    {lapsed && <TargetDatePassedBadge />}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">by {formatDate(g.target_date)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">by {formatGoalDate(g.target_date)}</p>
                 </div>
                 <Button variant="destructive" onClick={() => setConfirmDelete(g)}>Delete</Button>
               </div>
@@ -143,6 +147,12 @@ function GoalsPage() {
                 currentAmount={cur}
                 isPending={update.isPending && update.variables?.id === g.id}
                 onUpdate={(v) => update.mutate({ id: g.id, current_amount: v })}
+              />
+              <GoalTargetDateEditor
+                key={`${g.id}-${g.target_date}`}
+                goalId={g.id}
+                targetDate={g.target_date}
+                lapsed={lapsed}
               />
             </div>
           );

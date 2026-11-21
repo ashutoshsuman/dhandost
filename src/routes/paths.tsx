@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Layout } from "@/components/Layout";
@@ -20,6 +20,7 @@ import {
   consumeRecoveryPlanFlow,
   markRecoveryPlanActiveThisMonth,
 } from "@/lib/recovery-plan";
+import { formatDelayGoalDuration } from "@/lib/goal-utils";
 
 function formatINR(n: number): string {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -60,20 +61,20 @@ function renderAllocation(
     }
     case "delay_goal": {
       const days = a.duration_days;
-      const months = days == null ? a.duration_months : Math.round(days / 30);
+      const duration = formatDelayGoalDuration(days, a.duration_months);
       const monthly = a.monthly_amount;
       const amount = a.amount;
-      if (days == null && !months) {
+      if (!duration) {
         return { primary: `→ Delay ${a.target}` };
       }
       if (days != null && days < 30) {
         return {
-          primary: `→ Delay ${a.target} by ${days} ${days === 1 ? "day" : "days"}`,
+          primary: `→ Delay ${a.target} by ${duration}`,
           secondary: `Redirects ${inr(amount)} of this month's ${inr(monthly ?? 0)} goal saving`,
         };
       }
       return {
-        primary: `→ Delay ${a.target} by ${months} ${months === 1 ? "month" : "months"}`,
+        primary: `→ Delay ${a.target} by ${duration}`,
         secondary: `Redirects ${inr(monthly ?? 0)}/mo of saving · absorbs ${inr(amount)}`,
       };
     }
@@ -379,6 +380,14 @@ function PathCard({
                   {r.secondary && (
                     <div className="text-xs text-muted-foreground pl-4 mt-0.5">
                       {r.secondary}
+                    </div>
+                  )}
+                  {a.action === "delay_goal" && a.target_lapsed && (
+                    <div className="text-xs text-muted-foreground pl-4 mt-1 leading-relaxed">
+                      This goal's target date has passed, so this uses a 12-month saving pace.{" "}
+                      <Link to="/goals" className="underline underline-offset-2">
+                        Set a new date for an exact figure.
+                      </Link>
                     </div>
                   )}
                 </li>

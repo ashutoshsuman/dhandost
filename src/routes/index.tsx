@@ -26,6 +26,8 @@ import SpendSummary from "@/components/SpendSummary";
 import VariableSpendingTracker from "@/components/VariableSpendingTracker";
 import SpendingInsights from "@/components/SpendingInsights";
 import CyclingStatus from "@/components/CyclingStatus";
+import GoalTargetDateEditor, { TargetDatePassedBadge } from "@/components/GoalTargetDateEditor";
+import { formatGoalDate, isGoalTargetPassed } from "@/lib/goal-utils";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -678,26 +680,37 @@ function BreakdownRow({
 function GoalCard({ goal }: { goal: PlanGoal }) {
   const [open, setOpen] = useState(false);
   const pct = Math.min(100, Math.max(0, goal.percent_complete));
-  const styles = statusStyles(goal.status);
+  const lapsed = isGoalTargetPassed(goal.target_date, goal.status === "completed");
+  const styles = statusStyles(lapsed ? "behind" : goal.status);
 
   return (
     <div className="rounded-xl border border-border bg-card">
-      <button onClick={() => setOpen((v) => !v)} className="w-full text-left p-4 cursor-pointer">
+      <button
+        type="button"
+        onClick={() => {
+          if (!lapsed) setOpen((v) => !v);
+        }}
+        className={`w-full text-left p-4 ${lapsed ? "cursor-default" : "cursor-pointer"}`}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="font-medium truncate">{goal.name}</p>
             {goal.target_date && (
               <p className="text-xs text-muted-foreground mt-0.5">
-                Target {formatDate(goal.target_date)}
+                Target {formatGoalDate(goal.target_date)}
               </p>
             )}
           </div>
-          <span
-            className="text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap"
-            style={{ backgroundColor: styles.bg, color: styles.fg }}
-          >
-            {statusLabel(goal.status)}
-          </span>
+          {lapsed ? (
+            <TargetDatePassedBadge />
+          ) : (
+            <span
+              className="text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{ backgroundColor: styles.bg, color: styles.fg }}
+            >
+              {statusLabel(goal.status)}
+            </span>
+          )}
         </div>
 
         <div className="mt-3">
@@ -715,28 +728,41 @@ function GoalCard({ goal }: { goal: PlanGoal }) {
           </div>
         </div>
 
-        <div className="mt-3 flex items-center justify-between">
-          <p className="text-xs text-foreground/80">
-            Save{" "}
-            <span className="tabular-nums font-medium">
-              {formatINR(goal.required_monthly_savings)}
-            </span>
-            /month to stay on track
-          </p>
-          <ChevronDown
-            className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
-              open ? "rotate-180" : ""
-            }`}
+        {!lapsed && (
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-xs text-foreground/80">
+              Save{" "}
+              <span className="tabular-nums font-medium">
+                {formatINR(goal.required_monthly_savings)}
+              </span>
+              /month to stay on track
+            </p>
+            <ChevronDown
+              className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
+                open ? "rotate-180" : ""
+              }`}
+            />
+          </div>
+        )}
+      </button>
+      {lapsed ? (
+        <div className="border-t border-border px-4 py-4">
+          <GoalTargetDateEditor
+            key={`${goal.id}-${goal.target_date}`}
+            goalId={goal.id}
+            targetDate={goal.target_date}
+            lapsed
           />
         </div>
-      </button>
-      {open && (
-        <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground leading-relaxed">
-          Required monthly savings is derived from the gap between{" "}
-          {formatINR(goal.target_amount - goal.current_amount)} remaining and the months until{" "}
-          {formatDate(goal.target_date)}. Status reflects whether your current pace meets that
-          schedule.
-        </div>
+      ) : (
+        open && (
+          <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground leading-relaxed">
+            Required monthly savings is derived from the gap between{" "}
+            {formatINR(goal.target_amount - goal.current_amount)} remaining and the months until{" "}
+            {formatDate(goal.target_date)}. Status reflects whether your current pace meets that
+            schedule.
+          </div>
+        )
       )}
     </div>
   );
