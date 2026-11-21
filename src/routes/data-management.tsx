@@ -6,6 +6,7 @@ import { Trash2, RefreshCw, AlertTriangle, X } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
+import { rederiveVariableBaselines } from "@/lib/variable-spending";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Input } from "@/components/ui-primitives";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -505,6 +506,7 @@ function TransactionsSection() {
       if (error) throw error;
       toast.success("Transaction deleted");
       qc.invalidateQueries({ queryKey: ["dm-transactions"] });
+      rederiveVariableBaselines(qc);
     } catch (e) {
       toast.error((e as Error).message || "Could not delete");
     } finally {
@@ -528,6 +530,7 @@ function TransactionsSection() {
       toast.success("Transactions in range deleted");
       setShowRangeConfirm(false);
       qc.invalidateQueries({ queryKey: ["dm-transactions"] });
+      rederiveVariableBaselines(qc);
     } catch (e) {
       toast.error((e as Error).message || "Could not delete range");
     } finally {

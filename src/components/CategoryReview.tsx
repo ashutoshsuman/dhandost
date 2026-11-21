@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
+import { rederiveVariableBaselines } from "@/lib/variable-spending";
 import { useCategoryOptions, normalizeCategoryName } from "@/lib/useCategories";
 
 type Txn = {
@@ -41,6 +43,7 @@ export function CategoryEditor({
   onSaved?: (id: string, category: string, result: unknown) => void;
 }) {
   const { categories: hookCats, createOrMatch } = useCategoryOptions();
+  const qc = useQueryClient();
   const cats = catsProp ?? hookCats;
   const [value, setValue] = useState(transaction.category ?? "");
   const [saving, setSaving] = useState(false);
@@ -55,6 +58,7 @@ export function CategoryEditor({
       const result = await saveCorrection(transaction.id, next);
       setValue(next);
       setSaved(true);
+      rederiveVariableBaselines(qc);
       onSaved?.(transaction.id, next, result);
       setTimeout(() => setSaved(false), 1500);
     } catch (err) {
@@ -182,6 +186,7 @@ export function CategoryEditor({
 }
 
 export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
+  const qc = useQueryClient();
   const [rows, setRows] = useState<Txn[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
@@ -216,6 +221,7 @@ export function ReviewCategories({ currency = "₹" }: { currency?: string }) {
     if (!row.category) return;
     try {
       await saveCorrection(row.id, row.category);
+      rederiveVariableBaselines(qc);
       markConfirmed(row.id);
     } catch (err) {
       alert((err as Error).message);

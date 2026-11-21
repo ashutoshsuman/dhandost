@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Layout } from "@/components/Layout";
@@ -21,6 +22,7 @@ import {
   markRecoveryPlanActiveThisMonth,
 } from "@/lib/recovery-plan";
 import { formatDelayGoalDuration } from "@/lib/goal-utils";
+import { rederiveVariableBaselines } from "@/lib/variable-spending";
 
 function formatINR(n: number): string {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -217,6 +219,7 @@ async function applyAllocations(steps: AllocationStep[]) {
 function PathsPage() {
   const navigate = useNavigate();
   const router = useRouter();
+  const qc = useQueryClient();
   const [data, setData] = useState<ThreePathsResponse | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
@@ -243,6 +246,7 @@ function PathsPage() {
           priority_value: path.priority_value ?? null,
           allocation: path.allocation,
         });
+        rederiveVariableBaselines(qc);
 
         // Hide "Help me with a plan" for this transaction going forward.
         if (data.trigger_transaction_id) {

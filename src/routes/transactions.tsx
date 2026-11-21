@@ -7,6 +7,7 @@ import { Check, Loader2, Sparkles } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { supabase, type Transaction } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
+import { rederiveVariableBaselines } from "@/lib/variable-spending";
 import { formatINR, formatDate } from "@/lib/format";
 import { Button, Field, Input, Select } from "@/components/ui-primitives";
 import CyclingStatus from "@/components/CyclingStatus";
@@ -70,6 +71,7 @@ function TransactionsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       setConfirmDelete(null);
+      rederiveVariableBaselines(qc);
     },
   });
 
@@ -323,6 +325,7 @@ function AddForm({ onClose, categories }: { onClose: () => void; categories: str
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["transactions"] });
+      rederiveVariableBaselines(qc);
       onClose();
     },
   });

@@ -8,31 +8,10 @@ import {
   beginRecoveryPlanFlow,
   isRecoveryPlanActiveThisMonth,
 } from "@/lib/recovery-plan";
-
-type Status = "under" | "within" | "over";
-
-type CategoryRow = {
-  category: string;
-  actual: number;
-  baseline: number;
-  variance: number;
-  variance_percent?: number;
-  status?: Status;
-};
-
-type InsightsResponse = {
-  total_baseline: number;
-  total_actual: number;
-  total_variance: number;
-  top_risk_category?: string | null;
-  forecast_total_month_end_spend?: number;
-  forecast_total_variance?: number;
-  forecast_skewed_by_one_offs?: boolean;
-  implausible_overspend?: boolean;
-  categories: CategoryRow[];
-};
-
-import { invokeFn } from "@/lib/invokeFn";
+import {
+  fetchVariableSpendingInsights,
+  type SpendingStatus as Status,
+} from "@/lib/variable-spending";
 
 function statusFor(actual: number, baseline: number, provided?: Status): Status {
   if (provided && provided in statusStyles) return provided;
@@ -73,7 +52,7 @@ const statusStyles: Record<
 export default function VariableSpendingTracker() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["variable-spending-insights"],
-    queryFn: () => invokeFn<InsightsResponse>("variable-spending-insights"),
+    queryFn: fetchVariableSpendingInsights,
     retry: false,
   });
 

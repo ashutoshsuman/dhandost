@@ -7,3 +7,5 @@
 - [x] Verify parked balances, headroom, and lapsed-goal behaviour.
 - [x] Reorder Live Plan sections: spending chart, headroom card + commitments, tracker, goals.
 - [x] Show discretionary headroom as a line under the Spending card title.
+- [x] Refresh variable baselines after transaction, category, deletion, and path-choice events.
+- [x] Exclude plan-handled surprise expenses from current-month tracker spend.

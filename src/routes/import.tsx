@@ -9,6 +9,7 @@ import SecureUploadPanel from "@/components/SecureUploadPanel";
 
 import { supabase } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
+import { rederiveVariableBaselines } from "@/lib/variable-spending";
 import { formatINR } from "@/lib/format";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -159,12 +160,7 @@ function ImportPage() {
         })
         .catch((e) => console.error("categorize-transactions failed", e));
       // fire-and-forget baseline derivation for the Variable Spending Tracker
-      invokeFn("derive-variable-expenses", {})
-        .then(() => {
-          qc.invalidateQueries({ queryKey: ["variable-spending-insights"] });
-          qc.invalidateQueries({ queryKey: ["compute-plan"] });
-        })
-        .catch((e) => console.error("derive-variable-expenses failed", e));
+      rederiveVariableBaselines(qc);
       toast.success(`Imported ${count} transaction${count === 1 ? "" : "s"}`);
       navigate({ to: "/transactions" });
     },
