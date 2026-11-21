@@ -299,43 +299,42 @@ function LivePlan() {
   return (
     <div className="max-w-2xl mx-auto space-y-10 pb-8">
       <SpendSummary />
-      <VariableSpendingTracker />
-      <SpendingInsights />
-      {/* Financial Snapshot KPIs */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Current Headroom */}
-        <div className="rounded-xl border border-border bg-card p-5 text-center">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-            Current Headroom
-          </p>
-          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
-            {formatINR(headroom)}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">available this month</p>
-        </div>
 
-        {/* Committed Improvement */}
-        <div className="rounded-xl border border-success/30 bg-card p-5 text-center">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-            Committed Improvement
-          </p>
-          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-success">
-            {formatINR(committedMonthlyImprovement)}
-            <span className="text-sm font-medium text-muted-foreground ml-0.5">/mo</span>
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">from active commitments</p>
-        </div>
-
-        {/* Projected Headroom */}
-        <div className="rounded-xl border border-border bg-card p-5 text-center">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-            Projected Headroom
-          </p>
-          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
-            {formatINR(data.projected_discretionary_headroom ?? 0)}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">After active commitments</p>
-        </div>
+      {/* Breakdown */}
+      <section data-tour="live-plan-overview" className="rounded-xl border border-border bg-card divide-y divide-border">
+        <BreakdownRow
+          label="Expected monthly income"
+          amount={data.expected_monthly_income}
+          prefix=""
+          detail="Sum of recurring credits and configured monthly income sources."
+        />
+        <BreakdownRow
+          label="Fixed outflows"
+          amount={data.total_fixed_outflows}
+          prefix="−"
+          detail="Total of your active fixed expenses (rent, EMIs, subscriptions, utilities)."
+        />
+        <BreakdownRow
+          label="Goal savings required"
+          amount={data.total_goal_savings_required}
+          prefix="−"
+          detail="Monthly savings needed across all active goals to stay on track."
+        />
+        {(data.total_parked_savings ?? 0) > 0 && (
+          <BreakdownRow
+            label="Set aside this month"
+            amount={data.total_parked_savings ?? 0}
+            prefix="−"
+            detail="Money set aside to your emergency fund or investment via confirmed savings commitments. Already excluded from discretionary headroom."
+          />
+        )}
+        <BreakdownRow
+          label="Discretionary headroom"
+          amount={headroom}
+          prefix="="
+          highlight
+          detail="What remains after income minus fixed outflows and goal savings."
+        />
       </section>
 
       {/* Active Commitments */}
@@ -547,41 +546,59 @@ function LivePlan() {
         );
       })()}
 
-      {/* Breakdown */}
-      <section data-tour="live-plan-overview" className="rounded-xl border border-border bg-card divide-y divide-border">
-        <BreakdownRow
-          label="Expected monthly income"
-          amount={data.expected_monthly_income}
-          prefix=""
-          detail="Sum of recurring credits and configured monthly income sources."
-        />
-        <BreakdownRow
-          label="Fixed outflows"
-          amount={data.total_fixed_outflows}
-          prefix="−"
-          detail="Total of your active fixed expenses (rent, EMIs, subscriptions, utilities)."
-        />
-        <BreakdownRow
-          label="Goal savings required"
-          amount={data.total_goal_savings_required}
-          prefix="−"
-          detail="Monthly savings needed across all active goals to stay on track."
-        />
-        {(data.total_parked_savings ?? 0) > 0 && (
-          <BreakdownRow
-            label="Set aside this month"
-            amount={data.total_parked_savings ?? 0}
-            prefix="−"
-            detail="Money set aside to your emergency fund or investment via confirmed savings commitments. Already excluded from discretionary headroom."
-          />
-        )}
-        <BreakdownRow
-          label="Discretionary headroom"
-          amount={headroom}
-          prefix="="
-          highlight
-          detail="What remains after income minus fixed outflows and goal savings."
-        />
+      <VariableSpendingTracker />
+
+      {/* Active Goals */}
+      {data.goals && data.goals.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Goals
+          </h2>
+          <div className="space-y-3">
+            {data.goals.map((g) => (
+              <GoalCard key={g.id} goal={g} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <SpendingInsights />
+
+      {/* Financial Snapshot KPIs */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Current Headroom */}
+        <div className="rounded-xl border border-border bg-card p-5 text-center">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Current Headroom
+          </p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
+            {formatINR(headroom)}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">available this month</p>
+        </div>
+
+        {/* Committed Improvement */}
+        <div className="rounded-xl border border-success/30 bg-card p-5 text-center">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Committed Improvement
+          </p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-success">
+            {formatINR(committedMonthlyImprovement)}
+            <span className="text-sm font-medium text-muted-foreground ml-0.5">/mo</span>
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">from active commitments</p>
+        </div>
+
+        {/* Projected Headroom */}
+        <div className="rounded-xl border border-border bg-card p-5 text-center">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Projected Headroom
+          </p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
+            {formatINR(data.projected_discretionary_headroom ?? 0)}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">After active commitments</p>
+        </div>
       </section>
 
       {(data.total_parked_balance ?? 0) > 0 && (
@@ -606,20 +623,6 @@ function LivePlan() {
           {formatINR(data.total_debt_balance)} across {data.debt_count ?? "your"} debts at avg{" "}
           {data.weighted_avg_interest_rate?.toFixed(1)}% interest.
         </p>
-      )}
-
-      {/* Active Goals */}
-      {data.goals && data.goals.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-            Goals
-          </h2>
-          <div className="space-y-3">
-            {data.goals.map((g) => (
-              <GoalCard key={g.id} goal={g} />
-            ))}
-          </div>
-        </section>
       )}
 
       {/* Completed Goals */}
