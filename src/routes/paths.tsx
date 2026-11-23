@@ -23,6 +23,10 @@ import {
 } from "@/lib/recovery-plan";
 import { formatDelayGoalDuration } from "@/lib/goal-utils";
 import { rederiveVariableBaselines } from "@/lib/variable-spending";
+import {
+  describeDiscretionaryCut,
+  sumMonthlyDiscretionaryCuts,
+} from "@/lib/discretionary-cut";
 
 function formatINR(n: number): string {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -51,15 +55,14 @@ function renderAllocation(
 ): { primary: string; secondary?: string } {
   switch (a.action) {
     case "reduce_discretionary": {
-      const monthly = a.monthly_amount ?? 0;
-      const months = a.duration_months ?? 0;
-      const total = a.amount ?? 0;
-      if (!monthly || !months) {
-        return { primary: `→ Reduce ${a.target} by ${inr(total)}` };
+      const copy = describeDiscretionaryCut(a);
+      if (copy.invalidFinalMonth) {
+        console.warn(
+          "Unexpected reduce_discretionary allocation: final-month cut is not positive.",
+          a,
+        );
       }
-      return {
-        primary: `→ Reduce ${a.target} by ${inr(monthly)}/month for ${months} months (${inr(total)} total)`,
-      };
+      return { primary: `→ ${copy.text}` };
     }
     case "delay_goal": {
       const days = a.duration_days;
@@ -106,6 +109,22 @@ function renderAllocation(
 
 
 export const Route = createFileRoute("/paths")({
+  head: () => ({
+    meta: [
+      { title: "Three Paths | DhanDost" },
+      {
+        name: "description",
+        content: "Compare practical ways to allocate surprise income or absorb an unexpected expense.",
+      },
+      { property: "og:title", content: "Three Paths | DhanDost" },
+      {
+        property: "og:description",
+        content: "Compare practical ways to allocate surprise income or absorb an unexpected expense.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: () => (
     <Layout>
       <PathsPage />
@@ -364,6 +383,7 @@ function PathsPage() {
 function PathCard({
   path, saving, disabled, applied, onChoose,
 }: { path: PathOption; saving: boolean; disabled: boolean; applied: boolean; onChoose: () => void }) {
+  const discretionaryMonthlyCut = sumMonthlyDiscretionaryCuts(path.allocation ?? []);
 
   return (
     <div className="rounded-lg border border-border bg-card p-6 space-y-4">
@@ -430,9 +450,9 @@ function PathCard({
         </div>
       )}
 
-      {path.discretionary_impact !== 0 && (
+      {discretionaryMonthlyCut !== 0 && (
         <p className="text-sm text-muted-foreground">
-          Discretionary spending: ₹{Math.abs(path.discretionary_impact ?? 0).toLocaleString("en-IN")} less per month
+          Discretionary spending: {inr(discretionaryMonthlyCut)} less per month
         </p>
       )}
 

@@ -1,5 +1,7 @@
 # Current tasks
 
+- [ ] Show exact final-month discretionary cuts on Three Paths cards and sum regular monthly cuts in the summary.
+
 - [x] Preserve stored category values in all pickers, share complete defaults, and verify writes happen only on an explicit change; 43 tests and sample browser checks passed.
 
 - [x] Restore pending one-time actions with existing confirmation calls, cancellation, badge counts, and data refresh; verified with sample browser flows and 38 rule tests (live money updates not verified).
