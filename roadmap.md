@@ -1,5 +1,7 @@
 # Current tasks
 
+- [x] Restore pending one-time actions with existing confirmation calls, cancellation, badge counts, and data refresh; verified with sample browser flows and 38 rule tests (live money updates not verified).
+
 - [x] Rework Live Plan commitments: ongoing-only badge, IST action history, category progress, and cancellation.
 
 - [x] Add the informational Set aside card and rename the monthly parked-savings row.

@@ -64,6 +64,39 @@ test("cancel action sets cancelled status", () => {
   assert.deepEqual(cancellationUpdate, { status: "cancelled" });
 });
 
+test("only pending one-time actions join ongoing commitments in the badge", () => {
+  const rows = [
+    { commitment_type: "debt_paydown", status: "pending" },
+    { commitment_type: "allocate_savings", status: "pending" },
+    { commitment_type: "reduce_discretionary", status: "active" },
+    { commitment_type: "delay_goal", status: "pending" },
+    { commitment_type: "allocate_savings", status: "cancelled" },
+    { commitment_type: "debt_paydown", status: "confirmed", confirmed_at: now.toISOString() },
+  ];
+  const result = splitCommitments(rows, now);
+  assert.deepEqual(result.pending, rows.slice(0, 2));
+  assert.equal(result.badgeCount, 3);
+});
+
+test("confirmation moves a pending action into Done this month and out of the badge", () => {
+  for (const commitment_type of ["debt_paydown", "allocate_savings"]) {
+    const before = splitCommitments([{ commitment_type, status: "pending" }], now);
+    const after = splitCommitments([{ commitment_type, status: "confirmed", confirmed_at: now.toISOString() }], now);
+    assert.equal(before.pending.length, 1);
+    assert.equal(before.badgeCount, 1);
+    assert.equal(after.pending.length, 0);
+    assert.equal(after.badgeCount, 0);
+    assert.equal(after.done.length, 1);
+  }
+});
+
+test("cancelling a pending action removes it without recording a completed action", () => {
+  const result = splitCommitments([{ commitment_type: "debt_paydown", ...cancellationUpdate }], now);
+  assert.equal(result.pending.length, 0);
+  assert.equal(result.badgeCount, 0);
+  assert.equal(result.done.length + result.past.length, 0);
+});
+
 test("no ongoing or current actions leaves the empty state even when history exists", () => {
   const result = splitCommitments([{ commitment_type: "debt_paydown", status: "completed", confirmed_at: "2026-09-01" }], now);
   assert.equal(result.ongoing.length + result.done.length, 0);

@@ -20,6 +20,8 @@ export function splitCommitments<T extends CommitmentState>(rows: T[], now = new
   const { start, end } = istMonthBounds(now);
   const ongoing = rows.filter((row) => row.status === "active" &&
     (row.commitment_type === "reduce_discretionary" || row.commitment_type === "delay_goal"));
+  const pending = rows.filter((row) => row.status === "pending" &&
+    (row.commitment_type === "debt_paydown" || row.commitment_type === "allocate_savings"));
   const actions = rows.filter((row) =>
     (row.status === "confirmed" || row.status === "completed") &&
     (row.commitment_type === "debt_paydown" || row.commitment_type === "allocate_savings"));
@@ -27,7 +29,8 @@ export function splitCommitments<T extends CommitmentState>(rows: T[], now = new
     const confirmed = row.confirmed_at ? new Date(row.confirmed_at).getTime() : NaN;
     return confirmed >= Date.parse(start) && confirmed < Date.parse(end);
   };
-  return { ongoing, done: actions.filter(isThisMonth), past: actions.filter((row) => !isThisMonth(row)) };
+  return { ongoing, pending, badgeCount: ongoing.length + pending.length,
+    done: actions.filter(isThisMonth), past: actions.filter((row) => !isThisMonth(row)) };
 }
 
 export function reductionProgress(baseline: number | undefined, cut: number, spent: number) {

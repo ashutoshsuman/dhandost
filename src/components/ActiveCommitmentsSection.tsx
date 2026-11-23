@@ -34,7 +34,21 @@ type SpendRow = { category: string | null; amount: number | string; direction: s
 export default function ActiveCommitmentsSection({ rows }: { rows: ActiveCommitment[] }) {
   const [pastOpen, setPastOpen] = useState(false);
   const qc = useQueryClient();
-  const { ongoing, done, past } = splitCommitments(rows);
+  const { ongoing, pending, badgeCount, done, past } = splitCommitments(rows);
+  const pendingDebts = useQuery({
+    queryKey: ["debts", "pending-commitments"],
+    enabled: pending.some((row) => row.commitment_type === "debt_paydown" && !row.debt_name),
+    queryFn: async () => {
+      const { data, error } = await withTimeout(supabase.from("debts").select("id,name"), TIMEOUT_FAST);
+      if (error) throw error;
+      return data ?? [];
+    },
+    retry: 1,
+  });
+  const refreshActions = async () => {
+    await Promise.all(["active-commitments", "dm-commitments", "compute-plan", "debts", "dm-debts", "variable-spending-insights"]
+      .map((key) => qc.invalidateQueries({ queryKey: [key] })));
+  };
   const bounds = istMonthBounds();
   const progressQuery = useQuery({
     queryKey: ["variable-spending-insights", "commitment-progress", bounds.start],
@@ -87,15 +101,23 @@ export default function ActiveCommitmentsSection({ rows }: { rows: ActiveCommitm
     <section className="space-y-3">
       <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
         Active Commitments
-        <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">{ongoing.length}</span>
+        <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">{badgeCount}</span>
       </h2>
+      {pending.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-xs font-medium text-muted-foreground">Waiting for your confirmation</h3>
+          {pending.map((row, index) => <PendingAction key={row.id ?? index} row={row}
+            debtName={row.debt_name || pendingDebts.data?.find((debt) => debt.id === row.debt_id)?.name || "this debt"}
+            onUpdated={refreshActions} />)}
+        </div>
+      )}
       {totalCut > 0 && (
         <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2.5">
           <TrendingDown className="h-4 w-4 text-success shrink-0" />
           <p className="text-sm text-foreground">You&apos;ve committed to spending <span className="font-semibold text-success">{formatINR(totalCut)}/month</span> less</p>
         </div>
       )}
-      {ongoing.length === 0 && done.length === 0 && (
+      {ongoing.length === 0 && pending.length === 0 && done.length === 0 && (
         <p className="text-sm text-muted-foreground">No active commitments. Choose a plan path to add one.</p>
       )}
       <div className="space-y-1.5">
@@ -153,6 +175,66 @@ export default function ActiveCommitmentsSection({ rows }: { rows: ActiveCommitm
         </div>
       )}
     </section>
+  );
+}
+
+function PendingAction({ row, debtName, onUpdated }: {
+  row: ActiveCommitment;
+  debtName: string;
+  onUpdated: () => Promise<void>;
+}) {
+  const isDebt = row.commitment_type === "debt_paydown";
+  const confirm = useMutation({
+    mutationFn: async () => {
+      if (!row.id) throw new Error("Missing commitment id");
+      // Reuse the original confirmation endpoints and payload. They own all money updates.
+      const endpoint = isDebt ? "confirm-debt-paydown" : "confirm-savings-allocation";
+      const { data, error } = await supabase.functions.invoke(endpoint, {
+        body: { commitment_id: row.id },
+      });
+      if (error) {
+        console.error(`${endpoint} failed:`, error);
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: async () => {
+      toast.success(isDebt ? "Payment confirmed — debt balance updated." : "Amount set aside.");
+      await onUpdated();
+    },
+    onError: () => toast.error("Couldn't confirm this action. Please try again."),
+  });
+  const cancel = useMutation({
+    mutationFn: async () => {
+      if (!row.id) throw new Error("Missing commitment id");
+      const { data, error } = await withTimeout(supabase.from("active_commitments")
+        .update(cancellationUpdate).eq("id", row.id).eq("status", "pending")
+        .in("commitment_type", ["debt_paydown", "allocate_savings"]).select("id"), TIMEOUT_FAST);
+      if (error) throw error;
+      if (!data?.length) throw new Error("Commitment was not updated");
+    },
+    onSuccess: async () => {
+      toast.success("Action cancelled");
+      await onUpdated();
+    },
+    onError: () => toast.error("Couldn't cancel this action. Please try again."),
+  });
+  const busy = confirm.isPending || cancel.isPending;
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-2.5 space-y-2">
+      <p className="text-sm font-medium text-foreground">{isDebt
+        ? `Pay ${formatINR(row.paydown_amount ?? 0)} toward ${debtName}`
+        : `Set aside ${formatINR(row.paydown_amount ?? 0)} to ${row.savings_label || "savings"}`}</p>
+      <p className="text-xs text-muted-foreground">Nothing has changed yet.</p>
+      <div className="flex flex-wrap gap-2">
+        <Button disabled={busy || !row.id} onClick={() => confirm.mutate()}>
+          {confirm.isPending ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Confirming…</> : "Confirm"}
+        </Button>
+        <Button variant="outline" disabled={busy || !row.id} onClick={() => cancel.mutate()}>
+          {cancel.isPending ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Cancelling…</> : "Cancel"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
