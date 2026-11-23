@@ -1,6 +1,6 @@
 # Current tasks
 
-- [ ] Show exact final-month discretionary cuts on Three Paths cards and sum regular monthly cuts in the summary.
+- [x] Show exact final-month discretionary cuts on Three Paths cards and sum regular monthly cuts in the summary; 49 rule tests and sample browser checks passed.
 
 - [x] Preserve stored category values in all pickers, share complete defaults, and verify writes happen only on an explicit change; 43 tests and sample browser checks passed.
 
