@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { invokeFn } from "@/lib/invokeFn";
 import { rederiveVariableBaselines } from "@/lib/variable-spending";
 import { useCategoryOptions, normalizeCategoryName } from "@/lib/useCategories";
+import { categoryOptions, hasCategoryChange } from "@/lib/categories";
 
 type Txn = {
   id: string;
@@ -42,16 +43,21 @@ export function CategoryEditor({
   categories?: string[];
   onSaved?: (id: string, category: string, result: unknown) => void;
 }) {
-  const { categories: hookCats, createOrMatch } = useCategoryOptions();
+  const { categories: hookCats, createOrMatch } = useCategoryOptions(transaction.category);
   const qc = useQueryClient();
-  const cats = catsProp ?? hookCats;
   const [value, setValue] = useState(transaction.category ?? "");
+  const cats = categoryOptions([...hookCats, ...(catsProp ?? [])], value);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
 
+  useEffect(() => {
+    setValue(transaction.category ?? "");
+  }, [transaction.id, transaction.category]);
+
   async function applyCategory(next: string) {
+    if (!hasCategoryChange(value, next)) return;
     setSaving(true);
     setSaved(false);
     try {
@@ -80,7 +86,7 @@ export function CategoryEditor({
       setNewName("");
       return;
     }
-    if (next === transaction.category) {
+    if (!hasCategoryChange(value, next)) {
       setValue(next);
       return;
     }

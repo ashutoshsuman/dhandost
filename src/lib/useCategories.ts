@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
-import { DEFAULT_CATEGORIES } from "@/lib/categories";
+import { DEFAULT_CATEGORIES, categoryOptions } from "@/lib/categories";
 
 export type UserCategory = { id: string; name: string; kind: string };
 
@@ -19,7 +19,7 @@ export function normalizeCategoryName(raw: string): string {
  * Returns the alphabetized union of default + this user's custom categories,
  * plus helpers to create/match a new category name.
  */
-export function useCategoryOptions() {
+export function useCategoryOptions(storedValue?: string | null) {
   const qc = useQueryClient();
   const { userId } = useAuth();
 
@@ -36,15 +36,7 @@ export function useCategoryOptions() {
     },
   });
 
-  const merged = (() => {
-    const seen = new Map<string, string>(); // lower -> display
-    for (const c of DEFAULT_CATEGORIES) seen.set(c.toLowerCase(), c);
-    for (const c of customs) {
-      const key = c.name.toLowerCase();
-      if (!seen.has(key)) seen.set(key, c.name);
-    }
-    return [...seen.values()].sort((a, b) => a.localeCompare(b));
-  })();
+  const merged = categoryOptions(customs.map((c) => c.name), storedValue);
 
   /**
    * Normalize + case-insensitive match against defaults + customs.

@@ -12,6 +12,7 @@ import { invokeFn } from "@/lib/invokeFn";
 import { rederiveVariableBaselines } from "@/lib/variable-spending";
 import { formatINR } from "@/lib/format";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCategoryOptions } from "@/lib/useCategories";
 
 export const Route = createFileRoute("/import")({
   component: () => (
@@ -29,8 +30,6 @@ type Mapping = {
   credit: string;
   mode: "single" | "split";
 };
-
-const CATEGORIES = ["Food", "Transport", "Rent", "Utilities", "Shopping", "Health", "Entertainment", "Salary", "Investment", "Transfer", "Other"];
 
 function guessCol(headers: string[], patterns: RegExp[]): string {
   for (const p of patterns) {
@@ -75,6 +74,7 @@ function ImportPage() {
     date: "", description: "", amount: "", debit: "", credit: "", mode: "split",
   });
   const [defaultCategory, setDefaultCategory] = useState("");
+  const { categories } = useCategoryOptions(defaultCategory);
   const [fileName, setFileName] = useState("");
 
   const onFile = async (file: File) => {
@@ -224,7 +224,7 @@ function ImportPage() {
               <Field label="Default category (optional)">
                 <Select value={defaultCategory} onChange={(e) => setDefaultCategory(e.target.value)}>
                   <option value="">—</option>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  {categories.map((c) => <option key={c} value={c}>{c}</option>)}
                 </Select>
               </Field>
             </div>

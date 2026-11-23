@@ -182,8 +182,8 @@ function FixedPage() {
 
 function AddForm({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
-  const { categories, createOrMatch } = useCategoryOptions();
   const [form, setForm] = useState({ name: "", amount: "", category: "", customCategory: "", day_of_month: "" });
+  const { categories, createOrMatch } = useCategoryOptions(form.category);
   const [customMode, setCustomMode] = useState(false);
   const add = useMutation({
     mutationFn: async () => {
